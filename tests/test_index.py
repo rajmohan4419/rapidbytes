@@ -17,7 +17,7 @@ class TestIndexHtml(unittest.TestCase):
         match = re.search(r'<title>(.*?)</title>', self.content, re.IGNORECASE | re.DOTALL)
         self.assertIsNotNone(match, 'Title tag not found')
         title = match.group(1)
-        self.assertIn('rapidbytes.com', title)
+        self.assertIn('rapidbytes.in', title)
 
 if __name__ == '__main__':
     unittest.main()
