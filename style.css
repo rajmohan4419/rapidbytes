@@ -27,12 +27,18 @@ p {
 #news-results ul {
     list-style-type: none;
     padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+    justify-content: center;
 }
 
 #news-results li {
-    margin: 1em 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-    padding-bottom: 1em;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 1em;
+    width: 250px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
 }
 
 #news-results p {
@@ -48,6 +54,18 @@ a {
 
 a:hover {
     text-decoration: underline;
+}
+
+#search-form {
+    display: flex;
+    justify-content: center;
+    margin: 1em 0 2em;
+}
+
+#search-query {
+    width: 60%;
+    max-width: 400px;
+    margin-right: 0.5em;
 }
 
 /* Optional: A semi-transparent overlay for better text contrast if needed later
