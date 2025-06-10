@@ -64,13 +64,40 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContainer.appendChild(list);
     }
 
-    function buildQuery(keywords = []) {
+    function buildQuery(term) {
         const today = new Date().toISOString().slice(0, 10);
-        const conditions = [{ dateStart: today, dateEnd: today }];
-        if (keywords && keywords.length) {
-            keywords.forEach(term => {
-                conditions.push({ keyword: term, keywordLoc: 'title' });
-                conditions.push({ keyword: term, keywordLoc: 'body' });
+        if (term) {
+            return {
+                "$query": {
+                    "$and": [
+                        { "keyword": term, "keywordLoc": "title" },
+                        { "keyword": term, "keywordLoc": "body" },
+                        { "dateStart": today, "dateEnd": today }
+                    ]
+                }
+            };
+        }
+        return { "$query": { "dateStart": today, "dateEnd": today } };
+    }
+
+    function fetchNews(term = '') {
+        const queryObj = buildQuery(term);
+        const query = encodeURIComponent(JSON.stringify(queryObj));
+        let url = `https://eventregistry.org/api/v1/article/getArticles?query=${query}&resultType=articles&articlesSortBy=date&includeArticleSocialScore=true&includeArticleConcepts=true&includeArticleCategories=true&includeArticleLocation=true&includeArticleImage=true&includeArticleVideos=true&includeArticleLinks=true&includeArticleExtractedDates=true&includeArticleDuplicateList=true&includeArticleOriginalArticle=true&apiKey=${API_KEY}`;
+        fetch(url)
+            .then(resp => {
+                if (!resp.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return resp.json();
+            })
+            .then(data => {
+                const articles = (data.articles && data.articles.results) ? data.articles.results : [];
+                renderArticles(articles);
+            })
+            .catch(err => {
+                console.error('Error fetching news:', err);
+                resultsContainer.textContent = 'Error loading news.';
             });
         }
         return { "$query": { "$and": conditions } };
