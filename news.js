@@ -1,41 +1,60 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('news-sources');
-    if (!container) return;
+    const form = document.getElementById('search-form');
+    const resultsContainer = document.getElementById('news-results');
 
-    fetch('https://stock.indianapi.in/news', {
-        headers: {
-            'X-Api-Key': 'sk-live-v9EQtCmJTVidXufJhqcaRzmUUYw2rKkQjqvGJcfb'
+    const API_KEY = '6d54bd8f20ee40cb8c3b119cf16ae2c1';
+
+    function renderArticles(articles) {
+        resultsContainer.innerHTML = '';
+        if (!articles || articles.length === 0) {
+            resultsContainer.textContent = 'No articles found.';
+            return;
         }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const articles = Array.isArray(data)
-                ? data
-                : (data.data || data.articles || data.news || data.results || []);
-            if (Array.isArray(articles)) {
-                const list = document.createElement('ul');
-                articles.forEach(article => {
-                    const item = document.createElement('li');
-                    const link = document.createElement('a');
-                    link.href = article.url || article.link || '#';
-                    link.textContent = article.title || article.name || 'Untitled';
-                    link.target = '_blank';
-                    item.appendChild(link);
-                    list.appendChild(item);
-                });
-                container.textContent = '';
-                container.appendChild(list);
-            } else {
-                container.textContent = 'No headlines found.';
-            }
-        })
-        .catch(err => {
-            console.error('Error fetching news:', err);
-            container.textContent = 'Error loading news.';
+        const list = document.createElement('ul');
+        articles.forEach(article => {
+            const item = document.createElement('li');
+            const link = document.createElement('a');
+            link.href = article.url;
+            link.textContent = article.title || 'Untitled';
+            link.target = '_blank';
+            item.appendChild(link);
+            list.appendChild(item);
         });
+        resultsContainer.appendChild(list);
+    }
+
+    function fetchNews(query, date, sort) {
+        let url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&apiKey=${API_KEY}`;
+        if (date) {
+            url += `&from=${date}`;
+        }
+        if (sort) {
+            url += `&sortBy=${sort}`;
+        }
+        fetch(url)
+            .then(resp => {
+                if (!resp.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return resp.json();
+            })
+            .then(data => {
+                renderArticles(data.articles || []);
+            })
+            .catch(err => {
+                console.error('Error fetching news:', err);
+                resultsContainer.textContent = 'Error loading news.';
+            });
+    }
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const query = document.getElementById('query').value.trim();
+        const date = document.getElementById('date').value;
+        const sort = document.getElementById('sort').value;
+        if (!query) {
+            return;
+        }
+        fetchNews(query, date, sort);
+    });
 });
