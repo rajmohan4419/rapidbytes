@@ -44,6 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const list = document.createElement('ul');
         articles.forEach(article => {
             const item = document.createElement('li');
+            if (article.image) {
+                const img = document.createElement('img');
+                img.src = article.image;
+                item.appendChild(img);
+            }
             const link = document.createElement('a');
             link.href = article.url;
             link.textContent = article.title || 'Untitled';
@@ -61,8 +66,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function buildQuery(uri) {
-        const today = new Date().toISOString().slice(0, 10);
-        const conditions = [{ dateStart: today, dateEnd: today }];
+        const dateStart = document.getElementById('date-start').value;
+        const dateEnd = document.getElementById('date-end').value;
+        const conditions = [];
+        if (dateStart && dateEnd) {
+            conditions.push({ dateStart: dateStart, dateEnd: dateEnd });
+        } else {
+            const today = new Date().toISOString().slice(0, 10);
+            conditions.push({ dateStart: today, dateEnd: today });
+        }
         if (uri) {
             conditions.push({ conceptUri: uri });
         }
