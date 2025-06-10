@@ -24,6 +24,23 @@ p {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); /* Added text shadow for better readability */
 }
 
+#news-results ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+#news-results li {
+    margin: 1em 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    padding-bottom: 1em;
+}
+
+#news-results p {
+    text-align: left;
+    font-size: 1em;
+    line-height: 1.4em;
+}
+
 a {
     color: #ADD8E6; /* Light blue for links */
     text-decoration: none;
