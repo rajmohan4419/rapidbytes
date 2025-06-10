@@ -94,8 +94,9 @@ body::before {
 */
 
 #news-results li img {
-    max-width: 100%;
-    height: auto;
+    width: 200px;
+    height: 120px;
+    object-fit: cover;
     margin-bottom: 0.5em;
     border-radius: 3px;
 }
