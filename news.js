@@ -42,8 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const list = document.createElement('ul');
+        const seen = new Set();
         articles.forEach(article => {
+            if (seen.has(article.url)) return;
+            seen.add(article.url);
             const item = document.createElement('li');
+            item.className = 'news-item';
             if (article.image) {
                 const img = document.createElement('img');
                 img.src = article.image;
