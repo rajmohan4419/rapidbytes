@@ -7,6 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
             'X-Api-Key': 'sk-live-v9EQtCmJTVidXufJhqcaRzmUUYw2rKkQjqvGJcfb'
         }
     })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const articles = Array.isArray(data)
+                ? data
+                : (data.data || data.articles || data.news || data.results || []);
         .then(response => response.json())
         .then(data => {
             const articles = data.data || data.articles || data.news || [];
