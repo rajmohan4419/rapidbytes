@@ -17,9 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const articles = Array.isArray(data)
                 ? data
                 : (data.data || data.articles || data.news || data.results || []);
-        .then(response => response.json())
-        .then(data => {
-            const articles = data.data || data.articles || data.news || [];
             if (Array.isArray(articles)) {
                 const list = document.createElement('ul');
                 articles.forEach(article => {
