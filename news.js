@@ -1,42 +1,45 @@
+// Fetch and display news articles
+// Uses EventRegistry suggestConceptsFast API to retrieve concept URI from user query
+// Then queries articles by concept URI for today's date
+
 document.addEventListener('DOMContentLoaded', () => {
-    // EventRegistry API key
     const API_KEY = '7de5b262-507d-47bf-b589-fdca0a7ba4b8';
     const resultsContainer = document.getElementById('news-results');
     const form = document.getElementById('search-form');
     const searchInput = document.getElementById('search-query');
+    const startInput = document.getElementById('date-start');
+    const endInput = document.getElementById('date-end');
 
     form.addEventListener('submit', async e => {
         e.preventDefault();
         const term = searchInput.value.trim();
-        const keywords = await getSuggestions(term);
-        if (term && !keywords.includes(term)) {
-            keywords.unshift(term);
-        }
-        fetchNews(keywords);
+        const startDate = startInput.value;
+        const endDate = endInput.value;
+        const uri = await getConceptUri(term);
+        fetchNews(uri, startDate, endDate);
     });
 
-    fetchNews();
+    // Load today's news on page load
+    const today = new Date().toISOString().slice(0, 10);
+    startInput.value = today;
+    endInput.value = today;
+    fetchNews(null, today, today);
 
-    async function getSuggestions(prefix) {
-        if (!prefix) {
-            return [];
-        }
+    async function getConceptUri(term) {
+        if (!term) return null;
+        const url = `https://eventregistry.org/api/v1/suggestConceptsFast?prefix=${encodeURIComponent(term)}&lang=eng&apiKey=${API_KEY}`;
         try {
-            const url = `https://eventregistry.org/api/v1/suggestConceptsFast?prefix=${encodeURIComponent(prefix)}&lang=eng&apiKey=${API_KEY}`;
             const resp = await fetch(url);
             if (!resp.ok) throw new Error('Failed suggestions');
             const data = await resp.json();
-            if (Array.isArray(data)) {
-                return data.map(c => c.label || c.title || c.id).filter(Boolean);
-            } else if (data && data.concepts) {
-                return data.concepts.map(c => c.label || c.title || c.id).filter(Boolean);
-            } else if (data && data.suggestions) {
-                return data.suggestions.map(c => c.label || c.title || c.id).filter(Boolean);
-            }
+            const suggestion = Array.isArray(data)
+                ? data[0]
+                : (data && data.concepts ? data.concepts[0] : (data && data.suggestions ? data.suggestions[0] : null));
+            return suggestion && suggestion.uri ? suggestion.uri : null;
         } catch (err) {
-            console.error('Error fetching suggestions:', err);
+            console.error('Error fetching concept URI:', err);
+            return null;
         }
-        return [];
     }
 
     function renderArticles(articles) {
@@ -48,6 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const list = document.createElement('ul');
         articles.forEach(article => {
             const item = document.createElement('li');
+            if (article.image) {
+                const img = document.createElement('img');
+                img.src = article.image;
+                img.alt = '';
+                item.appendChild(img);
+            }
             const link = document.createElement('a');
             link.href = article.url;
             link.textContent = article.title || 'Untitled';
@@ -64,59 +73,27 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContainer.appendChild(list);
     }
 
-    function buildQuery(term) {
-        const today = new Date().toISOString().slice(0, 10);
-        if (term) {
-            return {
-                "$query": {
-                    "$and": [
-                        { "keyword": term, "keywordLoc": "title" },
-                        { "keyword": term, "keywordLoc": "body" },
-                        { "dateStart": today, "dateEnd": today }
-                    ]
-                }
-            };
-        }
-        return { "$query": { "dateStart": today, "dateEnd": today } };
-    }
-
-    function fetchNews(term = '') {
-        const queryObj = buildQuery(term);
-        const query = encodeURIComponent(JSON.stringify(queryObj));
-        let url = `https://eventregistry.org/api/v1/article/getArticles?query=${query}&resultType=articles&articlesSortBy=date&includeArticleSocialScore=true&includeArticleConcepts=true&includeArticleCategories=true&includeArticleLocation=true&includeArticleImage=true&includeArticleVideos=true&includeArticleLinks=true&includeArticleExtractedDates=true&includeArticleDuplicateList=true&includeArticleOriginalArticle=true&apiKey=${API_KEY}`;
-        fetch(url)
-            .then(resp => {
-                if (!resp.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return resp.json();
-            })
-            .then(data => {
-                const articles = (data.articles && data.articles.results) ? data.articles.results : [];
-                renderArticles(articles);
-            })
-            .catch(err => {
-                console.error('Error fetching news:', err);
-                resultsContainer.textContent = 'Error loading news.';
-            });
+    function buildQuery(uri, startDate, endDate) {
+        const conditions = [{ dateStart: startDate, dateEnd: endDate }];
+        if (uri) {
+            conditions.push({ conceptUri: uri });
         }
         return { "$query": { "$and": conditions } };
     }
 
-    async function fetchNews(keywords = []) {
-        const queryObj = buildQuery(keywords);
+    async function fetchNews(uri = null, startDate, endDate) {
+        const queryObj = buildQuery(uri, startDate, endDate);
         const query = encodeURIComponent(JSON.stringify(queryObj));
         const url = `https://eventregistry.org/api/v1/article/getArticles?query=${query}&resultType=articles&articlesSortBy=date&includeArticleSocialScore=true&includeArticleConcepts=true&includeArticleCategories=true&includeArticleLocation=true&includeArticleImage=true&includeArticleVideos=true&includeArticleLinks=true&includeArticleExtractedDates=true&includeArticleDuplicateList=true&includeArticleOriginalArticle=true&apiKey=${API_KEY}`;
         try {
             const resp = await fetch(url);
             if (!resp.ok) throw new Error('Network response was not ok');
             const data = await resp.json();
-            const articles = (data.articles && data.articles.results) ? data.articles.results : [];
+            const articles = data.articles && data.articles.results ? data.articles.results : [];
             renderArticles(articles);
         } catch (err) {
             console.error('Error fetching news:', err);
             resultsContainer.textContent = 'Error loading news.';
         }
     }
-
 });
