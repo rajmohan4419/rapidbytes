@@ -7,16 +7,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsContainer = document.getElementById('news-results');
     const form = document.getElementById('search-form');
     const searchInput = document.getElementById('search-query');
+    const startInput = document.getElementById('date-start');
+    const endInput = document.getElementById('date-end');
 
     form.addEventListener('submit', async e => {
         e.preventDefault();
         const term = searchInput.value.trim();
+        const startDate = startInput.value;
+        const endDate = endInput.value;
         const uri = await getConceptUri(term);
-        fetchNews(uri);
+        fetchNews(uri, startDate, endDate);
     });
 
     // Load today's news on page load
-    fetchNews();
+    const today = new Date().toISOString().slice(0, 10);
+    startInput.value = today;
+    endInput.value = today;
+    fetchNews(null, today, today);
 
     async function getConceptUri(term) {
         if (!term) return null;
@@ -44,6 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const list = document.createElement('ul');
         articles.forEach(article => {
             const item = document.createElement('li');
+            if (article.image) {
+                const img = document.createElement('img');
+                img.src = article.image;
+                img.alt = '';
+                item.appendChild(img);
+            }
             const link = document.createElement('a');
             link.href = article.url;
             link.textContent = article.title || 'Untitled';
@@ -60,17 +73,16 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContainer.appendChild(list);
     }
 
-    function buildQuery(uri) {
-        const today = new Date().toISOString().slice(0, 10);
-        const conditions = [{ dateStart: today, dateEnd: today }];
+    function buildQuery(uri, startDate, endDate) {
+        const conditions = [{ dateStart: startDate, dateEnd: endDate }];
         if (uri) {
             conditions.push({ conceptUri: uri });
         }
         return { "$query": { "$and": conditions } };
     }
 
-    async function fetchNews(uri = null) {
-        const queryObj = buildQuery(uri);
+    async function fetchNews(uri = null, startDate, endDate) {
+        const queryObj = buildQuery(uri, startDate, endDate);
         const query = encodeURIComponent(JSON.stringify(queryObj));
         const url = `https://eventregistry.org/api/v1/article/getArticles?query=${query}&resultType=articles&articlesSortBy=date&includeArticleSocialScore=true&includeArticleConcepts=true&includeArticleCategories=true&includeArticleLocation=true&includeArticleImage=true&includeArticleVideos=true&includeArticleLinks=true&includeArticleExtractedDates=true&includeArticleDuplicateList=true&includeArticleOriginalArticle=true&apiKey=${API_KEY}`;
         try {
