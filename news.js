@@ -1,8 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('search-form');
-    const resultsContainer = document.getElementById('news-results');
-
     const API_KEY = '6d54bd8f20ee40cb8c3b119cf16ae2c1';
+    const resultsContainer = document.getElementById('news-results');
+    fetchNews();
 
     function renderArticles(articles) {
         resultsContainer.innerHTML = '';
@@ -23,14 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContainer.appendChild(list);
     }
 
-    function fetchNews(query, date, sort) {
-        let url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&apiKey=${API_KEY}`;
-        if (date) {
-            url += `&from=${date}`;
-        }
-        if (sort) {
-            url += `&sortBy=${sort}`;
-        }
+    function fetchNews() {
+        let url = `https://newsapi.org/v2/top-headlines?country=us&apiKey=${API_KEY}`;
         fetch(url)
             .then(resp => {
                 if (!resp.ok) {
@@ -47,14 +40,4 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const query = document.getElementById('query').value.trim();
-        const date = document.getElementById('date').value;
-        const sort = document.getElementById('sort').value;
-        if (!query) {
-            return;
-        }
-        fetchNews(query, date, sort);
-    });
 });
