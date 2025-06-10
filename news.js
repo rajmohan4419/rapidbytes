@@ -1,6 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_KEY = '6d54bd8f20ee40cb8c3b119cf16ae2c1';
+    // EventRegistry API key
+    const API_KEY = '7de5b262-507d-47bf-b589-fdca0a7ba4b8';
     const resultsContainer = document.getElementById('news-results');
+    const form = document.getElementById('search-form');
+    const searchInput = document.getElementById('search-query');
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        fetchNews(searchInput.value.trim());
+    });
+
     fetchNews();
 
     function renderArticles(articles) {
@@ -22,8 +31,26 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContainer.appendChild(list);
     }
 
-    function fetchNews() {
-        let url = `https://newsapi.org/v2/top-headlines?country=us&apiKey=${API_KEY}`;
+    function buildQuery(term) {
+        const today = new Date().toISOString().slice(0, 10);
+        if (term) {
+            return {
+                "$query": {
+                    "$and": [
+                        { "keyword": term, "keywordLoc": "title" },
+                        { "keyword": term, "keywordLoc": "body" },
+                        { "dateStart": today, "dateEnd": today }
+                    ]
+                }
+            };
+        }
+        return { "$query": { "dateStart": today, "dateEnd": today } };
+    }
+
+    function fetchNews(term = '') {
+        const queryObj = buildQuery(term);
+        const query = encodeURIComponent(JSON.stringify(queryObj));
+        let url = `https://eventregistry.org/api/v1/article/getArticles?query=${query}&resultType=articles&articlesSortBy=date&includeArticleSocialScore=true&includeArticleConcepts=true&includeArticleCategories=true&includeArticleLocation=true&includeArticleImage=true&includeArticleVideos=true&includeArticleLinks=true&includeArticleExtractedDates=true&includeArticleDuplicateList=true&includeArticleOriginalArticle=true&apiKey=${API_KEY}`;
         fetch(url)
             .then(resp => {
                 if (!resp.ok) {
@@ -32,7 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return resp.json();
             })
             .then(data => {
-                renderArticles(data.articles || []);
+                const articles = (data.articles && data.articles.results) ? data.articles.results : [];
+                renderArticles(articles);
             })
             .catch(err => {
                 console.error('Error fetching news:', err);
