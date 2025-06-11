@@ -6,9 +6,69 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>rapidbytes.in</h1>
-<p>Coming Soon!</p>
-<p><a href="contact.html">Contact Us</a></p>
-<p><a href="news.html">News Search</a></p>
+    <nav>
+        <ul>
+            <li><a href="#home" class="active">Home</a></li>
+            <li><a href="#news">Today's World news</a></li>
+            <li><a href="#contact">Contact Us</a></li>
+        </ul>
+    </nav>
+
+    <div id="home" class="tab-content active">
+        <h1>rapidbytes.in</h1>
+        <p>Coming Soon!</p>
+    </div>
+
+    <div id="news" class="tab-content">
+        <h1>Rapid World News</h1>
+        <form id="search-form">
+            <input type="text" id="search-query" placeholder="Search keywords">
+            <label for="date-start">Start Date:</label>
+            <input type="date" id="date-start">
+            <label for="date-end">End Date:</label>
+            <input type="date" id="date-end">
+            <button type="submit">Search</button>
+        </form>
+        <div id="news-results"></div>
+    </div>
+
+    <div id="contact" class="tab-content">
+        <h1>Contact Us</h1>
+        <p>You can reach us at: ceo@rapidbytes.in</p>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tabLinks = document.querySelectorAll('nav a');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabLinks.forEach(function(link) {
+        link.addEventListener('click', function (event) {
+            event.preventDefault(); // Prevent default anchor behavior
+
+            // Remove 'active' class from all tab links
+            tabLinks.forEach(function(innerLink) {
+                innerLink.classList.remove('active');
+            });
+
+            // Remove 'active' class from all tab contents
+            tabContents.forEach(function(content) {
+                content.classList.remove('active');
+            });
+
+            // Add 'active' class to the clicked link
+            this.classList.add('active');
+
+            // Add 'active' class to the corresponding tab content
+            const targetId = this.getAttribute('href'); // #home, #news, or #contact
+            const targetContent = document.querySelector(targetId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+        });
+    });
+});
+</script>
+<script src="news.js"></script>
 </body>
 </html>

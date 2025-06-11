@@ -35,6 +35,72 @@ p {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); /* Added text shadow for better readability */
 }
 
+a {
+    color: #ADD8E6; /* Light blue for links */
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Tab Navigation Styles */
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+    margin-bottom: 0; /* Changed from 20px to 0 to connect with content */
+}
+
+nav li {
+    margin: 0; /* Removed margin: 0 5px; to make tabs connect */
+}
+
+nav a {
+    display: block;
+    padding: 10px 20px;
+    color: white;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-bottom: none; /* Remove bottom border by default */
+    border-radius: 5px 5px 0 0;
+    position: relative; /* For z-indexing if needed */
+    top: 1px; /* To align with the content box's border */
+}
+
+nav a:hover, nav a.active {
+    background-color: rgba(0, 0, 0, 0.7); /* Match content background */
+    border-color: rgba(255, 255, 255, 0.5);
+    border-bottom-color: transparent; /* Ensure it looks connected */
+}
+
+nav a.active {
+    /* Potentially slightly different style for active, but hover is good for now */
+    /* For example, a stronger border or different text color if desired */
+    font-weight: bold; /* Make active tab text bold */
+}
+
+
+/* Tab Content Styles */
+.tab-content {
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    /* border-top: none; /* This will be handled by the active tab link style */
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 0 0 5px 5px; /* Rounded bottom corners */
+    display: none; /* Hide by default */
+    margin-top: -1px; /* Overlap with the nav bar bottom border */
+}
+
+.tab-content.active {
+    display: block; /* Show active tab content */
+}
+
+/* Existing styles below */
 #news-results ul {
     list-style-type: none;
     padding: 0;
@@ -61,15 +127,6 @@ p {
     line-height: 1.4em;
 }
 
-a {
-    color: #ADD8E6; /* Light blue for links */
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
 #search-form {
     display: flex;
     justify-content: center;
@@ -81,20 +138,6 @@ a:hover {
     max-width: 400px;
     margin-right: 0.5em;
 }
-
-/* Optional: A semi-transparent overlay for better text contrast if needed later
-body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    /* background-color: rgba(0, 0, 0, 0.5); */ /* This was the old overlay, replaced by body::before */
-    z-index: -1;
-}
-*/
 
 .news-item img {
     width: 100%;
