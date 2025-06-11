@@ -6,17 +6,31 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Rapid World News</h1>
-    <form id="search-form">
-        <input type="text" id="search-query" placeholder="Search keywords">
-        <label for="date-start">Start Date:</label>
-        <input type="date" id="date-start">
-        <label for="date-end">End Date:</label>
-        <input type="date" id="date-end">
-        <button type="submit">Search</button>
-    </form>
-    <div id="news-results"></div>
-    <p><a href="index.html">Back to Home</a></p>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="news.html" class="active">News</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="about.html">About Us</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h1>Rapid World News</h1>
+        <form id="search-form">
+            <input type="text" id="search-query" placeholder="Search keywords">
+            <label for="date-start">Start Date:</label>
+            <input type="date" id="date-start">
+            <label for="date-end">End Date:</label>
+            <input type="date" id="date-end">
+            <button type="submit">Search</button>
+        </form>
+        <div id="news-results"></div>
+    </main>
+    <footer>
+        <p>&copy; 2023 RapidBytes. All rights reserved.</p>
+    </footer>
     <script src="news.js"></script>
 </body>
 </html>
