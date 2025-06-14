@@ -1,12 +1,28 @@
-// Enhanced Tower Defense Game with Resume and New Game functionality
+// --- Updated JavaScript (game.js) ---
 
 // Get DOM elements
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const placeTowerButton = document.getElementById('placeTowerButton');
 const startGameButton = document.getElementById('startGameButton');
-const resumeGameButton = document.getElementById('resumeGameButton');
-const newGameButton = document.getElementById('newGameButton');
+
+// These buttons must exist in HTML or be created dynamically
+let resumeGameButton = document.getElementById('resumeGameButton');
+let newGameButton = document.getElementById('newGameButton');
+
+if (!resumeGameButton) {
+    resumeGameButton = document.createElement('button');
+    resumeGameButton.id = 'resumeGameButton';
+    resumeGameButton.textContent = 'Resume Game';
+    document.body.appendChild(resumeGameButton);
+}
+
+if (!newGameButton) {
+    newGameButton = document.createElement('button');
+    newGameButton.id = 'newGameButton';
+    newGameButton.textContent = 'New Game';
+    document.body.appendChild(newGameButton);
+}
 
 // Game elements
 let towers = [];
@@ -22,12 +38,15 @@ let isGameOver = false;
 let waveInProgress = false;
 let enemiesSpawnedThisWave = 0;
 const WAVE_END_DELAY = 3000;
+
 let isPaused = false;
-
 let lastTime = 0;
-function gameLoop(currentTime) {
-    if (isPaused) return;
 
+function gameLoop(currentTime) {
+    if (isPaused) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
     const deltaTime = (currentTime - lastTime) / 1000;
     lastTime = currentTime;
 
@@ -47,76 +66,50 @@ function gameLoop(currentTime) {
 
     handleEnemySpawning(deltaTime);
 
-    towers.forEach(t => {
-        t.update(deltaTime, enemies, projectiles);
-        t.draw(ctx);
-    });
+    for (let i = towers.length - 1; i >= 0; i--) {
+        towers[i].update(deltaTime, enemies, projectiles);
+        towers[i].draw(ctx);
+    }
 
-    enemies.forEach(e => {
-        e.update(deltaTime);
-        if (!e.isDefeated) e.draw(ctx);
-    });
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        enemies[i].update(deltaTime);
+        if (!enemies[i].isDefeated) enemies[i].draw(ctx);
+    }
 
-    projectiles.forEach(p => {
-        p.update(deltaTime);
-        if (!p.isMarkedForRemoval) p.draw(ctx);
-    });
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        projectiles[i].update(deltaTime);
+        if (!projectiles[i].isMarkedForRemoval) projectiles[i].draw(ctx);
+    }
 
-    enemies = enemies.filter(e => !e.isDefeated);
+    enemies = enemies.filter(enemy => !enemy.isDefeated);
     projectiles = projectiles.filter(p => !p.isMarkedForRemoval);
 
-    if (waveInProgress && enemiesSpawnedThisWave === waveNumber * 5 && enemies.length === 0) {
+    if (waveInProgress && enemiesSpawnedThisWave === (waveNumber * 5) && enemies.length === 0) {
         waveInProgress = false;
         ctx.font = "30px Arial";
         ctx.fillStyle = "green";
         ctx.textAlign = "center";
         ctx.fillText(`Wave ${waveNumber} Complete!`, canvas.width / 2, canvas.height / 2 - 60);
         setTimeout(() => {
-            if (!isGameOver) startNewWave();
+            if (!isGameOver) {
+                startNewWave();
+            }
         }, WAVE_END_DELAY);
     }
 
     requestAnimationFrame(gameLoop);
 }
 
-canvas.addEventListener('click', (event) => {
-    if (isGameOver || isPaused) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    const towerCost = 50;
-    if (currency >= towerCost) {
-        towers.push(new Tower(x, y, towerCost, 10, 100, 1));
-        currency -= towerCost;
-        document.getElementById('currencyDisplay').textContent = `Currency: ${currency}`;
-    } else {
-        console.log("Not enough currency to place tower.");
-    }
-});
-
-startGameButton.addEventListener('click', () => {
-    if (!waveInProgress && waveNumber === 0 && !isGameOver) {
-        startNewWave();
-        startGameButton.disabled = true;
-        startGameButton.style.backgroundColor = '#ccc';
-        resumeGameButton.disabled = false;
-        newGameButton.disabled = false;
-    }
-});
-
-resumeGameButton.addEventListener('click', () => {
-    if (!isGameOver) {
-        isPaused = false;
-        lastTime = performance.now();
-        requestAnimationFrame(gameLoop);
-    }
-});
-
-newGameButton.addEventListener('click', () => {
-    resetGame();
-});
+function startNewWave() {
+    if (isGameOver) return;
+    waveNumber++;
+    waveInProgress = true;
+    enemiesSpawnedThisWave = 0;
+    enemySpawnTimer = 0;
+    document.getElementById('livesDisplay').textContent = `Lives: ${lives}`;
+    document.getElementById('scoreDisplay').textContent = `Score: ${score}`;
+    document.getElementById('currencyDisplay').textContent = `Currency: ${currency}`;
+}
 
 function resetGame() {
     towers = [];
@@ -129,16 +122,71 @@ function resetGame() {
     isGameOver = false;
     waveInProgress = false;
     enemiesSpawnedThisWave = 0;
-    isPaused = false;
+    lastTime = performance.now();
     document.getElementById('scoreDisplay').textContent = `Score: ${score}`;
     document.getElementById('livesDisplay').textContent = `Lives: ${lives}`;
     document.getElementById('currencyDisplay').textContent = `Currency: ${currency}`;
-    startGameButton.disabled = false;
-    startGameButton.style.backgroundColor = '';
+    startNewWave();
     requestAnimationFrame(gameLoop);
 }
 
-// Maintain other game logic and class definitions as-is...
+let enemySpawnTimer = 0;
+const ENEMY_SPAWN_INTERVAL = 0.75;
+const ENEMY_BASE_HEALTH = 50;
+const ENEMY_HEALTH_PER_WAVE = 10;
+const ENEMY_BASE_SPEED = 75;
+const ENEMY_SPEED_PER_WAVE = 5;
 
-// Start the loop
+function handleEnemySpawning(deltaTime) {
+    if (!waveInProgress || isGameOver || enemiesSpawnedThisWave >= (waveNumber * 5)) return;
+
+    enemySpawnTimer -= deltaTime;
+    if (enemySpawnTimer <= 0) {
+        const startY = canvas.height / 3 + (Math.random() * canvas.height / 3 - canvas.height / 6);
+        const enemyPath = [{x: -20, y: startY}, {x: canvas.width + 20, y: startY}];
+        const health = ENEMY_BASE_HEALTH + (waveNumber - 1) * ENEMY_HEALTH_PER_WAVE;
+        const speed = ENEMY_BASE_SPEED + (waveNumber - 1) * ENEMY_SPEED_PER_WAVE;
+        enemies.push(new Enemy(enemyPath[0].x, enemyPath[0].y, health, speed, enemyPath));
+        enemiesSpawnedThisWave++;
+        enemySpawnTimer = ENEMY_SPAWN_INTERVAL;
+    }
+}
+
+canvas.addEventListener('click', (event) => {
+    if (isGameOver) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const towerCost = 50;
+    if (currency >= towerCost) {
+        towers.push(new Tower(x, y, towerCost, 10, 100, 1));
+        currency -= towerCost;
+        document.getElementById('currencyDisplay').textContent = `Currency: ${currency}`;
+    } else {
+        console.log("Not enough currency to place tower.");
+    }
+});
+
+startGameButton.addEventListener('click', () => {
+    if (!waveInProgress && waveNumber === 0 && !isGameOver) {
+        resetGame();
+        startGameButton.disabled = true;
+    }
+});
+
+resumeGameButton.addEventListener('click', () => {
+    isPaused = false;
+});
+
+newGameButton.addEventListener('click', () => {
+    resetGame();
+});
+
+// Start loop paused
+isPaused = true;
 requestAnimationFrame(gameLoop);
+
+// NOTE: Add Tower, Enemy, and Projectile classes after this section
+// (or import if separated)
+// Ensure startNewWave() is globally accessible
+window.startNewWave = startNewWave;
