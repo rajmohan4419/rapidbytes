@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ByteBlock: Firewall Frenzy</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="info">
+    <h1>🛡️ ByteBlock: Firewall Frenzy</h1>
+    <p>Click on grid to place a tower. Defend the core from malware!</p>
+    <!-- Game Info Displays -->
+    <span id="livesDisplay">Lives: 10</span>
+    <span id="scoreDisplay">Score: 0</span>
+    <span id="currencyDisplay">Currency: 100</span>
+  </div>
+  <canvas id="gameCanvas" width="600" height="600"></canvas>
+  <div id="controls">
+    <!-- Game Control Buttons -->
+    <button id="startGameButton">Start Game</button>
+    <button id="placeTowerButton">Place Tower</button>
+    <button id="resumeGameButton">Resume Game</button>
+    <button id="newGameButton">New Game</button>
+  </div>
+  <script src="game.js" defer></script>
+</body>
+</html>

@@ -1,70 +1,75 @@
 body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #f0f0f0;
-    margin: 0;
-    padding-top: 20px;
+  font-family: monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #111;
+  color: #0f0;
+  margin: 0;
+  padding: 0;
 }
 
 h1 {
-    text-align: center;
-    color: #333;
+  text-align: center;
+  color: #0f0;
+  margin-top: 20px;
+  margin-bottom: 10px; /* Adjusted margin */
 }
 
 #gameCanvas {
-    border: 2px solid #333;
-    background-color: #c8e6c9; /* Light green for a grassy field */
-    box-shadow: 3px 3px 8px rgba(0,0,0,0.1);
+  border: 2px solid #0f0;
+  background-color: #222;
+  box-shadow: 3px 3px 8px rgba(0,0,0,0.5); /* Adjusted shadow for dark theme */
+  margin: 20px auto; /* Ensures centering and spacing */
+  display: block; /* Explicitly set for safety, though flex on body helps */
 }
 
-#gameInfo {
-    display: flex;
-    justify-content: space-around;
-    width: 800px;
-    margin: 15px 0;
+#info {
+  display: flex;
+  justify-content: space-around; /* Spreads items evenly */
+  width: 600px; /* Match canvas width */
+  margin: 15px 0;
 }
 
-#gameInfo span {
-    padding: 8px 15px;
-    background-color: #5c6bc0; /* Indigo background */
-    color: white;
-    border-radius: 5px;
-    font-size: 16px;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+#info span {
+  padding: 8px 15px;
+  background-color: #333; /* Darker boxes for info */
+  color: #0f0; /* Green text */
+  border: 1px solid #0f0;
+  border-radius: 5px;
+  font-size: 1em;
+  margin: 0 5px; /* Spacing between info elements */
+  text-align: center; /* Ensure text is centered within the span */
 }
 
-#gameControls {
-    display: flex;
-    justify-content: center;
-    width: 800px;
-    margin-bottom: 20px;
+#controls {
+  display: flex;
+  justify-content: center; /* Center buttons */
+  width: 600px; /* Match canvas width */
+  margin-bottom: 20px;
 }
 
-#gameControls button {
-    padding: 12px 25px;
-    font-size: 18px;
-    margin: 0 10px;
-    background-color: #4CAF50; /* Green for Start Game */
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.15);
+#controls button {
+  padding: 10px 20px;
+  font-size: 1em;
+  font-family: monospace;
+  margin: 0 10px; /* Spacing between buttons */
+  background-color: #0a0; /* Brighter green for buttons */
+  color: #111; /* Dark text for contrast */
+  border: 1px solid #0f0;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease; /* Added color transition */
 }
 
-#gameControls button#placeTowerButton {
-    background-color: #008CBA; /* Blue for Place Tower */
+#controls button:hover {
+  background-color: #0c0; /* Lighter green on hover */
+  color: #000; /* Darker text on hover for better contrast if needed */
 }
 
-#gameControls button:hover {
-    opacity: 0.9;
-}
-
-#gameControls button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-    opacity: 0.7;
+#controls button:disabled {
+  background-color: #555; /* Greyed out for disabled */
+  color: #aaa; /* Lighter text for disabled */
+  border-color: #777;
+  cursor: not-allowed;
 }
