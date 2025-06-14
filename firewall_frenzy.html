@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -15,6 +16,7 @@
     <span id="currencyDisplay">Currency: 100</span>
     <span id="levelDisplay">Level: 1</span>
     <span id="waveDisplay">Wave: 0</span>
+    <span id="towerSelectDisplay">Selected: Packet Blaster</span> <!-- Added for selected tower name -->
   </div>
   <canvas id="gameCanvas" width="600" height="600"></canvas>
   <div id="controls">
@@ -23,11 +25,25 @@
     <button id="resumeGameButton">Resume Game</button>
     <button id="newGameButton">New Game</button>
     <!-- Tower Selection Buttons -->
-    <hr> <!-- Optional separator -->
+    <hr>
     <button class="tower-select-button active" id="selectPacketBlasterButton" data-tower-type="PACKET_BLASTER">Packet Blaster (50)</button>
     <button class="tower-select-button" id="selectEncryptorNodeButton" data-tower-type="ENCRYPTOR_NODE">Encryptor Node (75)</button>
     <button class="tower-select-button" id="selectAntiVirusCannonButton" data-tower-type="ANTIVIRUS_CANNON">AV Cannon (125)</button>
+    <button class="tower-select-button" id="selectMlSniperButton" data-tower-type="ML_SNIPER">ML Sniper (175)</button>
+    <button class="tower-select-button" id="selectFirewallWallButton" data-tower-type="FIREWALL_WALL">Firewall (40)</button>
   </div>
+
+  <div id="towerInfoPanel" style="display: none;">
+    <h3 id="infoTowerName">Tower Name</h3>
+    <p id="infoTowerLevel">Level: 1</p>
+    <p id="infoTowerStat1">Stat1: Value1</p>
+    <p id="infoTowerStat2">Stat2: Value2</p>
+    <p id="infoTowerStat3">Stat3: Value3</p>
+    <p id="infoTowerSpecial">Special: ValueSpecial</p>
+    <button id="upgradeTowerButton">Upgrade (X C)</button>
+    <button id="closeTowerInfoButton">Close</button>
+  </div>
+
   <script src="game.js" defer></script>
 </body>
 </html>
