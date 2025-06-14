@@ -159,7 +159,7 @@ function handleEnemySpawning(deltaTime) {
             enemiesSpawnedThisWave++;
             enemySpawnTimer = ENEMY_SPAWN_INTERVAL;
         }
-    }
+    // Line 163 (extra '}') was here and is now removed.
 }
 
 // --- Classes ---
