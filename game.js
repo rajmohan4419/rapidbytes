@@ -2,6 +2,7 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 // Buttons (ensure they exist in HTML)
+
 // const placeTowerButton = document.getElementById('placeTowerButton'); // Old button, now replaced
 const startGameButton = document.getElementById('startGameButton');
 const resumeGameButton = document.getElementById('resumeGameButton');
