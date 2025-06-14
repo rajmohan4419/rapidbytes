@@ -1,513 +1,392 @@
-// --- Updated JavaScript (game.js) ---
-
-// Get DOM elements
+// --- Global DOM Elements (ensure these are in firewall_frenzy.html) ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const placeTowerButton = document.getElementById('placeTowerButton');
+// Buttons (ensure they exist in HTML)
+// const placeTowerButton = document.getElementById('placeTowerButton'); // Old button, now replaced
 const startGameButton = document.getElementById('startGameButton');
+const resumeGameButton = document.getElementById('resumeGameButton');
+const newGameButton = document.getElementById('newGameButton');
 
-// These buttons must exist in HTML or be created dynamically
-let resumeGameButton = document.getElementById('resumeGameButton');
-let newGameButton = document.getElementById('newGameButton');
+// --- Game Configuration & State ---
+const GRID_SIZE = 20;
+const CELL_SIZE = canvas.width / GRID_SIZE;
+const WAVE_END_DELAY = 3000;
+const ENEMY_SPAWN_INTERVAL = 0.7;
 
-if (!resumeGameButton) {
-    resumeGameButton = document.createElement('button');
-    resumeGameButton.id = 'resumeGameButton';
-    resumeGameButton.textContent = 'Resume Game';
-    // Consider appending to a specific controls div if it exists
-    document.body.appendChild(resumeGameButton);
+// --- Enemy Specifications ---
+const ENEMY_SPECS = { /* ... (as defined before) ... */
+    BUGLET: { name: "Buglet", baseHealth: 35, baseSpeed: 1.6, color: '#ADFF2F', widthModifier: 0.45, heightModifier: 0.45, points: 1, currencyDrop: 1 },
+    TROJAN_BEAST: { name: "Trojan Beast", baseHealth: 220, baseSpeed: 0.9, color: '#8B0000', widthModifier: 0.75, heightModifier: 0.75, points: 5, currencyDrop: 3 }
+};
+
+// --- Tower Specifications ---
+const TOWER_SPECS = { /* ... (as defined before) ... */
+    PACKET_BLASTER: { name: "Packet Blaster", cost: 50, range: 100 * (CELL_SIZE / 20), fireRate: 5, color: '#00FFFF', projectile: { damage: 7, speed: 350 * (CELL_SIZE / 20), color: '#00FFFF', size: CELL_SIZE / 4 } },
+    ENCRYPTOR_NODE: { name: "Encryptor Node", cost: 75, range: 70 * (CELL_SIZE / 20), fireRate: 0.8, color: '#FF00FF', effect: { type: 'slow', duration: 2.5, multiplier: 0.5, pulseColor: 'rgba(255, 0, 255, 0.3)' }  },
+    ANTIVIRUS_CANNON: { name: "AntiVirus Cannon", cost: 125, range: 130 * (CELL_SIZE / 20), fireRate: 0.75, color: '#FFA500', projectile: { damage: 25, speed: 200 * (CELL_SIZE / 20), color: '#FFA500', size: CELL_SIZE / 3, splashRadius: 60 * (CELL_SIZE / 20), splashDamage: 12 } }
+};
+let selectedTowerType = 'PACKET_BLASTER'; // Default selected tower
+
+// --- Path Definitions ---
+const enemyPaths = { /* ... (as defined before) ... */
+    north: [ { x: 300, y: 0 }, { x: 300, y: 120 }, { x: 270, y: 150 }, { x: 270, y: 240 }, { x: 300, y: 270 }, { x: 300, y: 290 } ],
+    south: [ { x: 300, y: 600 }, { x: 300, y: 480 }, { x: 330, y: 450 }, { x: 330, y: 360 }, { x: 300, y: 330 }, { x: 300, y: 310 } ],
+    east: [ { x: 600, y: 300 }, { x: 480, y: 300 }, { x: 450, y: 270 }, { x: 360, y: 270 }, { x: 330, y: 300 }, { x: 310, y: 300 } ],
+    west: [ { x: 0, y: 300 }, { x: 120, y: 300 }, { x: 150, y: 330 }, { x: 240, y: 330 }, { x: 270, y: 300 }, { x: 290, y: 300 } ],
+    northEastLoop: [ { x: 450, y: 0 }, { x: 450, y: 150 }, { x: 300, y: 150 }, { x: 300, y: 290 } ],
+    southWestLoop: [ { x: 150, y: 600 }, { x: 150, y: 450 }, { x: 300, y: 450 }, { x: 300, y: 310 } ]
+};
+
+// --- Level Settings Generation ---
+const MAX_LEVELS = 10;
+let levelSettings = [];
+const allPathKeys = Object.keys(enemyPaths);
+// ... (levelSettings generation logic as defined and verified in previous step)
+for (let i = 0; i < MAX_LEVELS; i++) {
+    const currentLevelNum = i + 1;
+    const numWavesForLevel = 2 + currentLevelNum;
+    const waveCfgs = [];
+    for (let j = 0; j < numWavesForLevel; j++) {
+        const waveNumInLevel = j + 1;
+        let typesForThisWave = [];
+        const enemyCountThisWave = 3 + waveNumInLevel + Math.floor(currentLevelNum / 2);
+        for(let k=0; k < enemyCountThisWave; k++) {
+            if (currentLevelNum > 1 && (k % (5 - Math.min(2, Math.floor(currentLevelNum/2))) === 0) ) {
+                 typesForThisWave.push('TROJAN_BEAST');
+            } else {
+                typesForThisWave.push('BUGLET');
+            }
+        }
+        let pathsForThisWave = [enemyPaths[allPathKeys[(currentLevelNum + waveNumInLevel - 2) % allPathKeys.length]]];
+        if (currentLevelNum > 2 && waveNumInLevel % 2 === 0 && allPathKeys.length > 1) {
+            pathsForThisWave.push(enemyPaths[allPathKeys[(currentLevelNum + waveNumInLevel -1) % allPathKeys.length]]);
+        }
+        if (pathsForThisWave.length > 1 && pathsForThisWave[0] === pathsForThisWave[1]) {
+            pathsForThisWave[1] = enemyPaths[allPathKeys[(currentLevelNum + waveNumInLevel) % allPathKeys.length]];
+        }
+        waveCfgs.push({ paths: pathsForThisWave, enemyTypes: typesForThisWave });
+    }
+    levelSettings.push({
+        level: currentLevelNum, waves: waveCfgs.length,
+        healthMultiplier: 1 + (i * 0.22), speedMultiplier: 1 + (i * 0.09), waveConfigs: waveCfgs
+    });
 }
 
-if (!newGameButton) {
-    newGameButton = document.createElement('button');
-    newGameButton.id = 'newGameButton';
-    newGameButton.textContent = 'New Game';
-    // Consider appending to a specific controls div if it exists
-    document.body.appendChild(newGameButton);
-}
 
-// Game elements
+// --- Game State Variables ---
 let towers = [];
 let enemies = [];
 let projectiles = [];
-
-// Game state
 let score = 0;
-let lives = 10; // Initial lives
-let currency = 100; // Initial currency
+let lives = 10;
+let currency = 200;
 let waveNumber = 0;
+let currentLevel = 1;
 let isGameOver = false;
+let gameWon = false;
 let waveInProgress = false;
 let enemiesSpawnedThisWave = 0;
-const WAVE_END_DELAY = 3000; // ms, delay before next wave
-
+let enemySpawnTimer = 0;
+let enemySpawnCounterForPathSelection = 0;
 let isPaused = false;
 let lastTime = 0;
 
-// Constants for balancing - these can be tweaked
-const ENEMY_BASE_HEALTH = 50;
-const ENEMY_HEALTH_PER_WAVE = 10; // How much health enemies gain per wave
-const ENEMY_BASE_SPEED = 75; // pixels per second
-const ENEMY_SPEED_PER_WAVE = 5; // How much speed enemies gain per wave
-const ENEMIES_PER_WAVE_BASE = 5; // Base number of enemies per wave
-const ENEMIES_PER_WAVE_INCREMENT = 2; // How many more enemies spawn each wave
+// --- Path Drawing Function ---
+function drawPaths(ctx) { /* ... (as defined before) ... */
+    ctx.save(); ctx.globalAlpha = 0.15; ctx.lineWidth = CELL_SIZE * 0.8;
+    for (const pathName in enemyPaths) {
+        const path = enemyPaths[pathName]; if (path.length === 0) continue; ctx.beginPath();
+        if (pathName.includes("north")) ctx.strokeStyle = '#6688cc'; else if (pathName.includes("south")) ctx.strokeStyle = '#cc6666'; else if (pathName.includes("east")) ctx.strokeStyle = '#66cc66'; else if (pathName.includes("west")) ctx.strokeStyle = '#cccc66'; else ctx.strokeStyle = '#555';
+        for (let i = 0; i < path.length; i++) { const point = path[i]; if (i === 0) ctx.moveTo(point.x, point.y); else ctx.lineTo(point.x, point.y); }
+        ctx.stroke();
+    } ctx.restore();
+}
 
 // --- Main Game Loop ---
-function gameLoop(currentTime) {
-    if (isPaused && !isGameOver) { // Keep rendering if game over but paused state
-        requestAnimationFrame(gameLoop);
-        return;
-    }
-    const deltaTime = (currentTime - (lastTime || currentTime)) / 1000; // Handle first frame
-    lastTime = currentTime;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    if (isGameOver) {
-        displayGameOver();
-        return; // Stop further game logic if game over
-    }
-
+function gameLoop(currentTime) { /* ... (as defined before) ... */
+    if (isPaused && !isGameOver) { requestAnimationFrame(gameLoop); return; }
+    const deltaTime = (currentTime - (lastTime || currentTime)) / 1000; lastTime = currentTime;
+    ctx.clearRect(0, 0, canvas.width, canvas.height); drawPaths(ctx);
+    if (isGameOver) { displayGameOver(); return; }
     handleEnemySpawning(deltaTime);
-
-    // Update and Draw Towers
-    for (let i = towers.length - 1; i >= 0; i--) {
-        towers[i].update(deltaTime, enemies, projectiles);
-        towers[i].draw(ctx);
-    }
-
-    // Update and Draw Enemies
-    // Iterate backwards for safe removal
-    for (let i = enemies.length - 1; i >= 0; i--) {
-        enemies[i].update(deltaTime); // Enemy updates its own state, including isDefeated
-        if (!enemies[i].isDefeated) { // Only draw if not defeated
-            enemies[i].draw(ctx);
-        }
-    }
-
-    // Update and Draw Projectiles
-    // Iterate backwards for safe removal
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-        projectiles[i].update(deltaTime);
-        if (!projectiles[i].isMarkedForRemoval) { // Only draw if not marked for removal
-            projectiles[i].draw(ctx);
-        }
-    }
-
-    // Filter out defeated enemies and used projectiles
-    enemies = enemies.filter(enemy => !enemy.isDefeated);
-    projectiles = projectiles.filter(p => !p.isMarkedForRemoval);
-
-    checkWaveCompletion();
-
-    requestAnimationFrame(gameLoop);
+    for (let i = towers.length - 1; i >= 0; i--) { towers[i].update(deltaTime, enemies, projectiles); towers[i].draw(ctx); }
+    for (let i = enemies.length - 1; i >= 0; i--) { enemies[i].update(deltaTime); if (!enemies[i].isDefeated) enemies[i].draw(ctx); }
+    for (let i = projectiles.length - 1; i >= 0; i--) { projectiles[i].update(deltaTime, enemies); if (!projectiles[i].isMarkedForRemoval) projectiles[i].draw(ctx); }
+    enemies = enemies.filter(enemy => !enemy.isDefeated); projectiles = projectiles.filter(p => !p.isMarkedForRemoval);
+    checkWaveCompletion(); requestAnimationFrame(gameLoop);
 }
 
-function displayGameOver() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = "48px monospace";
-    ctx.fillStyle = "red";
-    ctx.textAlign = "center";
-    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
-    ctx.font = "24px monospace";
-    ctx.fillStyle = "white";
-    ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 30);
-    // Optionally, re-enable new game button or show other options
-    startGameButton.disabled = false; // Or use newGameButton
-    startGameButton.textContent = 'Play Again?';
+// --- Game State Management Functions ---
+function displayGameOver() { /* ... (as defined before) ... */
+    ctx.save(); ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = "48px monospace"; ctx.textAlign = "center";
+    if (gameWon) { ctx.fillStyle = "gold"; ctx.fillText("YOU WON!", canvas.width / 2, canvas.height / 2 - 40); ctx.font = "24px monospace"; ctx.fillStyle = "white"; ctx.fillText("All levels cleared!", canvas.width / 2, canvas.height / 2); }
+    else { ctx.fillStyle = "red"; ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20); }
+    ctx.font = "24px monospace"; ctx.fillStyle = "white"; ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + (gameWon ? 40 : 30));
+    if(startGameButton) { startGameButton.disabled = false; startGameButton.textContent = 'Play Again?'; }
+    if (resumeGameButton) resumeGameButton.disabled = true;
+    ctx.restore();
 }
 
-function checkWaveCompletion() {
-    if (waveInProgress && enemiesSpawnedThisWave >= getEnemiesThisWave() && enemies.length === 0 && !isGameOver) {
-        waveInProgress = false;
-        // Announce wave completion (optional visual feedback)
-        console.log(`Wave ${waveNumber} Complete!`);
-        // Award bonus currency for completing a wave (optional)
-        currency += 50 + waveNumber * 10;
-        document.getElementById('currencyDisplay').textContent = `Currency: ${currency}`;
+function getEnemiesThisWaveCount() { /* ... (as defined before) ... */
+    if (currentLevel > MAX_LEVELS || waveNumber === 0 || currentLevel === 0) return 0;
+    const currentLevelIndex = currentLevel - 1; const waveIndex = waveNumber - 1;
+    if (!levelSettings[currentLevelIndex] || !levelSettings[currentLevelIndex].waveConfigs[waveIndex] || !levelSettings[currentLevelIndex].waveConfigs[waveIndex].enemyTypes) { console.error(`Incomplete wave config for Level ${currentLevel}, Wave ${waveNumber}`); return 0;  }
+    return levelSettings[currentLevelIndex].waveConfigs[waveIndex].enemyTypes.length;
+}
 
-        setTimeout(() => {
-            if (!isGameOver) { // Check again in case game ended during timeout
-                startNewWave();
-            }
-        }, WAVE_END_DELAY);
+function checkWaveCompletion() { /* ... (as defined before) ... */
+    const totalEnemiesInWave = getEnemiesThisWaveCount();
+    if (waveInProgress && enemiesSpawnedThisWave >= totalEnemiesInWave && enemies.length === 0 && !isGameOver) {
+        waveInProgress = false; console.log(`Level ${currentLevel} - Wave ${waveNumber} Complete!`); currency += 25 + waveNumber * 5 + currentLevel * 10;
+        updateGameInfoDisplays();
+        setTimeout(() => { if (!isGameOver) { startNewWave(); } }, WAVE_END_DELAY);
     }
 }
 
-function startNewWave() {
-    if (isGameOver) return;
-    waveNumber++;
-    waveInProgress = true;
-    enemiesSpawnedThisWave = 0;
-    enemySpawnTimer = 0; // Reset spawn timer for the new wave
-    console.log(`Starting Wave ${waveNumber}`);
-    // Update UI for new wave (optional, if you have a wave display)
-    // document.getElementById('waveDisplay').textContent = `Wave: ${waveNumber}`;
-    updateGameInfoDisplays(); // Update all info displays
+function startNewWave() { /* ... (as defined before) ... */
+    if (isGameOver) return; waveNumber++;
+    const currentLevelIndex = currentLevel - 1;
+    if (currentLevelIndex >= levelSettings.length) { console.error("Attempting to access level settings beyond MAX_LEVELS."); isGameOver = true; gameWon = true; displayGameOver(); return; }
+    const levelConf = levelSettings[currentLevelIndex];
+    if (waveNumber > levelConf.waveConfigs.length) {
+        currentLevel++; waveNumber = 1; currency += 100 * (currentLevel - 1);
+        console.log(`Level ${currentLevel -1} completed! Advancing to Level ${currentLevel}`);
+        if (currentLevel > MAX_LEVELS) { isGameOver = true; gameWon = true; console.log("Congratulations! All levels cleared!"); updateGameInfoDisplays(); return; }
+    }
+    waveInProgress = true; enemiesSpawnedThisWave = 0; enemySpawnTimer = ENEMY_SPAWN_INTERVAL; enemySpawnCounterForPathSelection = 0;
+    console.log(`Starting Level ${currentLevel} - Wave ${waveNumber}`); updateGameInfoDisplays();
 }
 
 function resetGame() {
-    towers = [];
-    enemies = [];
-    projectiles = [];
-    score = 0;
-    lives = 10; // Reset to initial
-    currency = 100; // Reset to initial
-    waveNumber = 0;
-    isGameOver = false;
-    waveInProgress = false;
-    enemiesSpawnedThisWave = 0;
-    isPaused = false; // Ensure game is not paused
-    lastTime = performance.now(); // Reset time for deltaTime calculation
-
+    selectedTowerType = 'PACKET_BLASTER'; // Reset to default tower type
+    towers = []; enemies = []; projectiles = []; score = 0; lives = 10; currency = 200;
+    waveNumber = 0; currentLevel = 1;
+    isGameOver = false; gameWon = false; waveInProgress = false; enemiesSpawnedThisWave = 0;
+    enemySpawnCounterForPathSelection = 0; isPaused = false; lastTime = performance.now();
     updateGameInfoDisplays();
-
-    // Re-enable start button, disable others if necessary
-    startGameButton.disabled = false;
-    startGameButton.textContent = 'Start Game';
+    if(startGameButton) { startGameButton.disabled = false; startGameButton.textContent = 'Start Game'; }
     if (resumeGameButton) resumeGameButton.disabled = true;
-
-    // It's common to start the first wave automatically or wait for user
-    // For now, let's wait for "Start Game" button
-    // requestAnimationFrame(gameLoop); // Start loop if not already running
-}
+    if (newGameButton) newGameButton.disabled = false;
+    ctx.clearRect(0,0,canvas.width, canvas.height); drawPaths(ctx);
+    ctx.save(); ctx.font = "20px monospace"; ctx.fillStyle = "#0f0"; ctx.textAlign = "center";
+    ctx.fillText("Press 'Start Game' to begin!", canvas.width/2, canvas.height/2);
+    ctx.restore();
+ }
 
 function updateGameInfoDisplays() {
-    document.getElementById('livesDisplay').textContent = `Lives: ${lives}`;
-    document.getElementById('scoreDisplay').textContent = `Score: ${score}`;
-    document.getElementById('currencyDisplay').textContent = `Currency: ${currency}`;
-    // document.getElementById('waveDisplay').textContent = `Wave: ${waveNumber}`; // If you add a wave display
-}
-
-
-let enemySpawnTimer = 0;
-const ENEMY_SPAWN_INTERVAL = 1.0; // Time in seconds between spawns in a wave
-
-function getEnemiesThisWave() {
-    return ENEMIES_PER_WAVE_BASE + (waveNumber -1) * ENEMIES_PER_WAVE_INCREMENT;
-}
-
-function handleEnemySpawning(deltaTime) {
-    if (!waveInProgress || isGameOver || enemiesSpawnedThisWave >= getEnemiesThisWave()) {
-        return;
+    const currentLevelIndex = currentLevel - 1;
+    let totalWavesInLevelDisplay = 'N/A';
+    if (currentLevelIndex >= 0 && currentLevelIndex < levelSettings.length && levelSettings[currentLevelIndex] && levelSettings[currentLevelIndex].waveConfigs) {
+        totalWavesInLevelDisplay = levelSettings[currentLevelIndex].waveConfigs.length;
     }
 
+    if(document.getElementById('livesDisplay')) document.getElementById('livesDisplay').textContent = `Lives: ${lives}`;
+    if(document.getElementById('scoreDisplay')) document.getElementById('scoreDisplay').textContent = `Score: ${score}`;
+    if(document.getElementById('currencyDisplay')) document.getElementById('currencyDisplay').textContent = `Currency: ${currency}`;
+    if(document.getElementById('levelDisplay')) document.getElementById('levelDisplay').textContent = `Level: ${currentLevel}`;
+    if(document.getElementById('waveDisplay')) document.getElementById('waveDisplay').textContent = `Wave: ${waveNumber} / ${totalWavesInLevelDisplay}`;
+
+    const towerSelectDisplayEl = document.getElementById('towerSelectDisplay'); // For potential future use
+    if(towerSelectDisplayEl && TOWER_SPECS[selectedTowerType]) {
+         towerSelectDisplayEl.textContent = `Selected: ${TOWER_SPECS[selectedTowerType].name}`;
+    }
+}
+
+function handleEnemySpawning(deltaTime) { /* ... (as defined before, uses currentLevel and waveNumber) ... */
+    const currentLevelIndex = currentLevel - 1; const waveIndex = waveNumber - 1;
+    if (!waveInProgress || isGameOver || currentLevelIndex < 0 || currentLevelIndex >= levelSettings.length || waveIndex < 0 || !levelSettings[currentLevelIndex].waveConfigs || waveIndex >= levelSettings[currentLevelIndex].waveConfigs.length) { return; }
+    const waveConfig = levelSettings[currentLevelIndex].waveConfigs[waveIndex]; const enemiesToSpawnThisWave = waveConfig.enemyTypes.length;
+    if (enemiesSpawnedThisWave >= enemiesToSpawnThisWave) { return; }
     enemySpawnTimer -= deltaTime;
     if (enemySpawnTimer <= 0) {
-        // Example path: enemies enter from left, move to right.
-        // Path points are {x, y} coordinates.
-        // For simplicity, let's make them enter from a random y on the left and exit right.
-        const startY = Math.random() * (canvas.height - 40) + 20; // Random Y, keeping within canvas a bit
-        const endY = Math.random() * (canvas.height - 40) + 20; // Can vary end Y for diverse paths
-
-        // A simple path: from left edge to right edge.
-        // For more complex paths, this array would have more points.
-        const enemyPath = [
-            { x: 0, y: startY }, // Start off-screen left
-            { x: canvas.width, y: endY }  // Target off-screen right
-        ];
-
-        const health = ENEMY_BASE_HEALTH + (waveNumber - 1) * ENEMY_HEALTH_PER_WAVE;
-        const speed = ENEMY_BASE_SPEED + (waveNumber - 1) * ENEMY_SPEED_PER_WAVE;
-
-        enemies.push(new Enemy(enemyPath[0].x, enemyPath[0].y, health, speed, enemyPath));
-        enemiesSpawnedThisWave++;
-        enemySpawnTimer = ENEMY_SPAWN_INTERVAL; // Reset timer for next spawn
+        const enemyType = waveConfig.enemyTypes[enemiesSpawnedThisWave]; const availablePathsForWave = waveConfig.paths;
+        if (!availablePathsForWave || availablePathsForWave.length === 0) { console.error(`No paths for L${currentLevel} W${waveNumber}`); waveInProgress = false; return; }
+        const selectedPath = availablePathsForWave[enemySpawnCounterForPathSelection % availablePathsForWave.length]; enemySpawnCounterForPathSelection++;
+        const startX = selectedPath[0].x; const startY = selectedPath[0].y;
+        enemies.push(new Enemy(startX, startY, enemyType, selectedPath, currentLevel));
+        enemiesSpawnedThisWave++; enemySpawnTimer = ENEMY_SPAWN_INTERVAL;
     }
 }
 
 // --- Event Listeners ---
-canvas.addEventListener('click', (event) => {
-    if (isGameOver || isPaused) return; // Don't place towers if game over or paused
+if (canvas) {
+    canvas.addEventListener('click', (event) => {
+        if (isGameOver || isPaused) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+        const gridX = Math.floor(x / CELL_SIZE); // Grid column
+        const gridY = Math.floor(y / CELL_SIZE); // Grid row
 
-    // Example: Basic tower stats - these could be dynamic or selected by player
-    const towerCost = 50;
-    const attackDamage = 15;
-    const range = 100; // pixels
-    const fireRate = 1.5; // shots per second
+        if (gridX < 0 || gridX >= GRID_SIZE || gridY < 0 || gridY >= GRID_SIZE) return; // Click outside grid
 
-    if (currency >= towerCost) {
-        towers.push(new Tower(x, y, towerCost, attackDamage, range, fireRate));
-        currency -= towerCost;
-        updateGameInfoDisplays();
-    } else {
-        console.log("Not enough currency to place tower.");
-        // Optionally, provide visual feedback to the user (e.g., shake currency display)
+        if (selectedTowerType && TOWER_SPECS[selectedTowerType]) {
+            const towerCost = TOWER_SPECS[selectedTowerType].cost;
+            if (currency >= towerCost) {
+                const existingTower = towers.find(t => t.gridX === gridX && t.gridY === gridY);
+                if (!existingTower) {
+                    towers.push(new Tower(gridX, gridY, selectedTowerType));
+                    currency -= towerCost;
+                    updateGameInfoDisplays();
+                } else {
+                    console.log("Cell occupied by another tower!");
+                }
+            } else {
+                console.log("Not enough currency for:", TOWER_SPECS[selectedTowerType].name);
+            }
+        }
+    });
+}
+
+// Initialize Tower Selection Button Listeners
+function initializeTowerSelection() {
+    const towerButtons = document.querySelectorAll('.tower-select-button');
+    towerButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            selectedTowerType = button.getAttribute('data-tower-type');
+            towerButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            console.log("Selected tower:", TOWER_SPECS[selectedTowerType].name);
+            updateGameInfoDisplays(); // Update if towerSelectDisplay is used
+        });
+        // Optional: Update button text with dynamic cost - already hardcoded in HTML for this task
+        // const type = button.getAttribute('data-tower-type');
+        // if (TOWER_SPECS[type]) {
+        //    button.textContent = `${TOWER_SPECS[type].name} (${TOWER_SPECS[type].cost})`;
+        // }
+    });
+     // Set initial active button based on default selectedTowerType
+    const initialActiveButton = document.querySelector(`.tower-select-button[data-tower-type="${selectedTowerType}"]`);
+    if (initialActiveButton) {
+        initialActiveButton.classList.add('active');
     }
-});
+}
 
-startGameButton.addEventListener('click', () => {
-    if (isGameOver) { // If game was over, this button acts as "Play Again"
-        resetGame(); // Reset all game state
-        // The first wave will be started by resetGame or needs a call here
-        startNewWave();
-        lastTime = performance.now(); // Important to reset time
-        requestAnimationFrame(gameLoop); // Ensure loop is running
-        startGameButton.textContent = 'Start Game'; // Change text back if needed
-        startGameButton.disabled = true; // Disable after starting
-        if(resumeGameButton) resumeGameButton.disabled = false;
 
-    } else if (waveNumber === 0 && !waveInProgress) { // Initial start
-        resetGame(); // Good practice to reset before first start too
+if (startGameButton) { /* ... (logic largely same, ensure resetGame and startNewWave are effective) ... */
+    startGameButton.addEventListener('click', () => {
+        if (isGameOver) { resetGame(); }
+        if (waveNumber === 0 && !waveInProgress) { resetGame(); }
+        isPaused = false;
         startNewWave();
         lastTime = performance.now();
         requestAnimationFrame(gameLoop);
         startGameButton.disabled = true;
-        if(resumeGameButton) resumeGameButton.disabled = false;
-    }
-    isPaused = false; // Ensure game is not paused when starting/restarting
-});
-
-
-if (resumeGameButton) {
+        if (resumeGameButton) { resumeGameButton.disabled = false; resumeGameButton.textContent = 'Pause Game';}
+    });
+}
+if (resumeGameButton) { /* ... (no change) ... */
     resumeGameButton.addEventListener('click', () => {
-        if (isGameOver) return;
-        isPaused = !isPaused; // Toggle pause state
-        if (!isPaused) {
-            lastTime = performance.now(); // Reset lastTime to avoid large deltaTime jump
-            requestAnimationFrame(gameLoop); // Resume game loop
-            resumeGameButton.textContent = 'Pause Game';
-        } else {
-            resumeGameButton.textContent = 'Resume Game';
-            // Optionally draw a pause screen
-            ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.font = "30px monospace";
-            ctx.fillStyle = "white";
-            ctx.textAlign = "center";
-            ctx.fillText("Paused", canvas.width/2, canvas.height/2);
-        }
+        if (isGameOver) return; isPaused = !isPaused;
+        if (!isPaused) { lastTime = performance.now(); requestAnimationFrame(gameLoop); resumeGameButton.textContent = 'Pause Game'; }
+        else { resumeGameButton.textContent = 'Resume Game'; ctx.save(); ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.font="30px monospace"; ctx.fillStyle="white"; ctx.textAlign="center"; ctx.fillText("Paused",canvas.width/2,canvas.height/2); ctx.restore(); }
     });
 }
-
-if (newGameButton) {
-    newGameButton.addEventListener('click', () => {
-        isPaused = true; // Pause the current game
-        // Optional: Add a confirmation dialog here (e.g., "Are you sure?")
-        resetGame();
-        // UI updates for new game
-        startGameButton.disabled = false;
-        startGameButton.textContent = 'Start Game';
-        if(resumeGameButton) {
-            resumeGameButton.disabled = true;
-            resumeGameButton.textContent = 'Pause Game';
-        }
-        // Clear canvas or show a "Press Start Game" message
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.font = "24px monospace";
-        ctx.fillStyle = "#0f0";
-        ctx.textAlign = "center";
-        ctx.fillText("Press 'Start Game' to begin!", canvas.width/2, canvas.height/2);
-
-    });
+if (newGameButton) { /* ... (no change) ... */
+    newGameButton.addEventListener('click', () => { isPaused = true; resetGame(); });
 }
 
-// Initial UI setup
 document.addEventListener('DOMContentLoaded', () => {
-    resetGame(); // Set initial values for displays
-    if(resumeGameButton) resumeGameButton.disabled = true; // Disabled until game starts
-    // Initial message on canvas
-    ctx.font = "24px monospace";
-    ctx.fillStyle = "#0f0"; // Theme color
-    ctx.textAlign = "center";
-    ctx.fillText("Welcome to ByteBlock!", canvas.width / 2, canvas.height / 2 - 30);
-    ctx.fillText("Press 'Start Game' to begin.", canvas.width / 2, canvas.height / 2 + 10);
+    if (!canvas) { console.error("Canvas not found! Game cannot start."); return; }
+    initializeTowerSelection(); // Setup tower select button listeners
+    resetGame();
+    if (resumeGameButton) resumeGameButton.disabled = true;
 });
 
 // --- Class Definitions ---
-
-class Enemy {
-    constructor(x, y, health, speed, path) {
-        this.x = x;
-        this.y = y;
-        this.health = health;
-        this.initialHealth = health; // Store initial health for health bar
-        this.speed = speed;
-        this.path = path; // An array of {x, y} points
-        this.pathIndex = 0;
-        this.width = 20; // Example size
-        this.height = 20; // Example size
-        this.isDefeated = false;
+class Enemy { /* ... (constructor uses currentLevelContext) ... */
+    constructor(x, y, type, pathObject, currentLevelContext) {
+        this.type = type; const specs = ENEMY_SPECS[type];
+        if (!specs) { console.error("Unknown enemy type:", type); const fallbackSpecs = ENEMY_SPECS['BUGLET']; this.name = fallbackSpecs.name; this.maxHealth = fallbackSpecs.baseHealth; this.baseSpeed = fallbackSpecs.baseSpeed * CELL_SIZE; this.color = fallbackSpecs.color; this.width = CELL_SIZE * fallbackSpecs.widthModifier; this.height = CELL_SIZE * fallbackSpecs.heightModifier; this.points = fallbackSpecs.points; this.currencyDrop = fallbackSpecs.currencyDrop; }
+        else { const levelConf = levelSettings[currentLevelContext - 1]; this.name = specs.name; this.maxHealth = specs.baseHealth * (levelConf.healthMultiplier || 1); this.baseSpeed = specs.baseSpeed * CELL_SIZE * (levelConf.speedMultiplier || 1); this.color = specs.color; this.width = CELL_SIZE * specs.widthModifier; this.height = CELL_SIZE * specs.heightModifier; this.points = specs.points; this.currencyDrop = specs.currencyDrop || 0; }
+        this.health = this.maxHealth; this.currentSpeed = this.baseSpeed;
+        this.path = pathObject; this.pathIndex = 0; this.x = x; this.y = y; this.isDefeated = false; this.effects = {};
     }
-
-    update(deltaTime) {
-        if (this.isDefeated || this.pathIndex >= this.path.length) {
-            // If already defeated or somehow past path end, do nothing.
-            // If pathIndex is at length, it means it reached the last point,
-            // so it should be handled by the distance check leading to pathIndex++
-            return;
-        }
-
-        const targetPoint = this.path[this.pathIndex];
-        const dx = targetPoint.x - this.x;
-        const dy = targetPoint.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        // Check if close enough to the current target point
-        if (distance < this.speed * deltaTime) {
-            this.x = targetPoint.x;
-            this.y = targetPoint.y;
-            this.pathIndex++;
-
-            // Check if this was the last point in the path
-            if (this.pathIndex >= this.path.length) {
-                this.isDefeated = true; // Mark as "defeated" for removal by game loop
-                if (!isGameOver) { // Only decrement lives if game is not already over
-                    lives--;
-                    if (lives < 0) lives = 0;
-                    updateGameInfoDisplays(); // Update display
-                    if (lives === 0) {
-                        isGameOver = true; // Set global game over flag
-                    }
-                }
-            }
-        } else {
-            // Move towards the target point
-            this.x += (dx / distance) * this.speed * deltaTime;
-            this.y += (dy / distance) * this.speed * deltaTime;
-        }
+    applyEffect(effectName, effectData) { this.effects[effectName] = { ...effectData, active: true }; }
+    removeEffect(effectName) { delete this.effects[effectName]; }
+    update(deltaTime) { /* ... (as defined before) ... */
+        if (this.isDefeated) return; this.currentSpeed = this.baseSpeed;
+        for (const effectName in this.effects) { const effect = this.effects[effectName]; if (effect.active) { if (effect.duration > 0) { if (effect.type === 'slow') { this.currentSpeed *= effect.multiplier; } effect.duration -= deltaTime; } else { this.removeEffect(effectName); } } }
+        if (this.pathIndex >= this.path.length) { this.isDefeated = true; if (!isGameOver) { lives--; if (lives < 0) lives = 0; updateGameInfoDisplays(); if (lives === 0) { isGameOver = true; gameWon = false; } } return; }
+        const targetPoint = this.path[this.pathIndex]; const dx = targetPoint.x - this.x; const dy = targetPoint.y - this.y; const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < this.currentSpeed * deltaTime * 1.1) { this.x = targetPoint.x; this.y = targetPoint.y; this.pathIndex++; if (this.pathIndex >= this.path.length) { this.isDefeated = true; if (!isGameOver) { lives--; if (lives < 0) lives = 0; updateGameInfoDisplays(); if (lives === 0) { isGameOver = true; gameWon = false; } } } }
+        else { this.x += (dx / distance) * this.currentSpeed * deltaTime; this.y += (dy / distance) * this.currentSpeed * deltaTime; }
     }
-
-    draw(ctx) {
-        // Main body of the enemy
-        ctx.fillStyle = 'red';
+    draw(ctx) { /* ... (as defined before) ... */
+        ctx.save(); if (this.effects.slow && this.effects.slow.active) { ctx.fillStyle = 'rgba(100, 100, 255, 0.8)'; } else { ctx.fillStyle = this.color; }
         ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
-
-        // Health bar background
-        ctx.fillStyle = '#555'; // Dark grey for background of health bar
-        ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2 - 7, this.width, 5);
-
-        // Current health
-        const healthPercentage = this.health / this.initialHealth;
-        ctx.fillStyle = 'green';
-        ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2 - 7, this.width * healthPercentage, 5);
+        const healthBarWidth = this.width; const healthBarHeight = 5; const healthBarX = this.x - healthBarWidth / 2; const healthBarY = this.y - this.height / 2 - healthBarHeight - 3;
+        ctx.fillStyle = '#333'; ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+        const healthPercentage = Math.max(0, this.health / this.maxHealth); ctx.fillStyle = 'lime'; ctx.fillRect(healthBarX, healthBarY, healthBarWidth * healthPercentage, healthBarHeight);
+        ctx.restore();
     }
-
-    takeDamage(amount) {
-        this.health -= amount;
-        if (this.health <= 0 && !this.isDefeated) { // Ensure this only triggers once
-            this.isDefeated = true;
-            score += 10; // Example: add to score
-            currency += 5; // Example: add to currency
-            updateGameInfoDisplays(); // Update display
-        }
+    takeDamage(amount) { /* ... (as defined before) ... */
+        this.health -= amount; if (this.health <= 0 && !this.isDefeated) { this.isDefeated = true; score += this.points; currency += this.currencyDrop; updateGameInfoDisplays(); }
     }
 }
 
 class Tower {
-    constructor(x, y, cost, attackDamage, range, fireRate) {
-        this.x = x;
-        this.y = y;
-        this.cost = cost;
-        this.attackDamage = attackDamage;
-        this.range = range; // pixels
-        this.fireRate = fireRate; // shots per second
-        this.cooldown = 0; // time until next shot, in seconds
-        this.width = 30; // Example size
-        this.height = 30; // Example size
+    constructor(gridX, gridY, type) { // Changed signature
+        this.gridX = gridX;
+        this.gridY = gridY;
+        this.x = gridX * CELL_SIZE + CELL_SIZE / 2; // Calculate canvas X
+        this.y = gridY * CELL_SIZE + CELL_SIZE / 2; // Calculate canvas Y
+        this.type = type;
+        const specs = TOWER_SPECS[type];
+
+        this.name = specs.name;
+        this.cost = specs.cost;
+        this.range = specs.range;
+        this.fireRate = specs.fireRate;
+        this.color = specs.color;
+        this.cooldown = 0;
+
+        this.projectileSpecs = specs.projectile;
+        this.effectSpecs = specs.effect;
+
+        this.width = CELL_SIZE * 0.9;
+        this.height = CELL_SIZE * 0.9;
+        this.auraPulseTime = 0;
     }
-
-    update(deltaTime, enemies, projectiles) {
-        if (this.cooldown > 0) {
-            this.cooldown -= deltaTime;
-        }
-
-        if (this.cooldown <= 0) {
-            const target = this.findTarget(enemies);
-            if (target) {
-                this.shoot(target, projectiles);
-                this.cooldown = 1 / this.fireRate; // Reset cooldown
-            }
-        }
+    update(deltaTime, enemies, projectiles) { /* ... (as defined before) ... */
+        if (this.cooldown > 0) { this.cooldown -= deltaTime; } if (this.auraPulseTime > 0) this.auraPulseTime -= deltaTime;
+        if (this.type === 'ENCRYPTOR_NODE') { if (this.cooldown <= 0 && this.effectSpecs) { let affectedCount = 0; for (const enemy of enemies) { if (enemy.isDefeated) continue; const dx = enemy.x - this.x; const dy = enemy.y - this.y; const distanceSq = dx * dx + dy * dy; if (distanceSq < this.range * this.range) { enemy.applyEffect(this.effectSpecs.type, { ...this.effectSpecs }); affectedCount++; } } if (affectedCount > 0) { this.cooldown = 1 / this.fireRate; this.auraPulseTime = 0.3; } else { this.cooldown = 0.2; } } }
+        else { if (this.cooldown <= 0 && this.projectileSpecs) { const target = this.findTarget(enemies); if (target) { this.shoot(target, projectiles); this.cooldown = 1 / this.fireRate; } } }
     }
-
-    findTarget(enemies) {
-        let closestEnemy = null;
-        let minDistanceSq = this.range * this.range; // Use squared distance for efficiency
-
-        for (const enemy of enemies) {
-            if (enemy.isDefeated) continue;
-            const dx = enemy.x - this.x;
-            const dy = enemy.y - this.y;
-            const distanceSq = dx * dx + dy * dy; // Squared distance
-            if (distanceSq < minDistanceSq) {
-                minDistanceSq = distanceSq;
-                closestEnemy = enemy;
-            }
-        }
+    findTarget(enemies) { /* ... (as defined before) ... */
+        let closestEnemy = null; let minDistanceSq = this.range * this.range;
+        for (const enemy of enemies) { if (enemy.isDefeated) continue; const dx = enemy.x - this.x; const dy = enemy.y - this.y; const distanceSq = dx * dx + dy * dy; if (distanceSq < minDistanceSq) { minDistanceSq = distanceSq; closestEnemy = enemy; } }
         return closestEnemy;
     }
-
-    shoot(target, projectiles) {
-        // Create a new projectile aimed at the target
-        // Projectile speed can be a constant or a property of the tower/projectile type
-        projectiles.push(new Projectile(this.x, this.y, target, this.attackDamage, 250)); // projectile speed 250
+    shoot(target, projectiles) { /* ... (as defined before) ... */
+        if (!this.projectileSpecs) return; projectiles.push(new Projectile(this.x, this.y, target, this.projectileSpecs));
     }
-
-    draw(ctx) {
-        ctx.fillStyle = 'blue'; // Main tower color
-        ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
-
-        // Optional: Draw range circle for debugging or when placing tower
-        // ctx.beginPath();
-        // ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
-        // ctx.strokeStyle = 'rgba(0, 0, 255, 0.2)'; // Light blue, semi-transparent
-        // ctx.stroke();
+    draw(ctx) { /* ... (as defined before) ... */
+        ctx.save(); ctx.fillStyle = this.color; ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+        ctx.strokeStyle = 'rgba(200, 200, 200, 0.2)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2); ctx.stroke();
+        if (this.type === 'ENCRYPTOR_NODE' && this.auraPulseTime > 0 && this.effectSpecs) { const pulseProgress = 1 - (this.auraPulseTime / 0.3); ctx.fillStyle = this.effectSpecs.pulseColor; ctx.beginPath(); ctx.arc(this.x, this.y, this.range * pulseProgress, 0, Math.PI * 2); ctx.fill(); }
+        ctx.restore();
     }
 }
-
-class Projectile {
-    constructor(x, y, target, damage, speed) {
-        this.x = x;
-        this.y = y;
-        this.target = target;
-        this.damage = damage;
-        this.speed = speed; // pixels per second
-        this.width = 6; // Example size
-        this.height = 6; // Example size
+class Projectile { /* ... (as defined before) ... */
+    constructor(x, y, target, specs) {
+        this.x = x; this.y = y; this.target = target;
+        this.damage = specs.damage; this.speed = specs.speed; this.color = specs.color; this.size = specs.size || CELL_SIZE / 5;
+        this.splashRadius = specs.splashRadius || 0; this.splashDamage = specs.splashDamage || 0;
         this.isMarkedForRemoval = false;
     }
-
-    update(deltaTime) {
-        if (this.isMarkedForRemoval) return;
-
-        // If target is already defeated (e.g., by another projectile), mark for removal
-        if (this.target.isDefeated) {
-            this.isMarkedForRemoval = true;
-            return;
-        }
-
-        const dx = this.target.x - this.x;
-        const dy = this.target.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        // Check if projectile will reach or pass the target this frame
-        if (distance < this.speed * deltaTime) {
+    update(deltaTime, enemies) {
+        if (this.isMarkedForRemoval) return; if (this.target.isDefeated && this.target.health <=0 ) { this.isMarkedForRemoval = true; return; }
+        const dx = this.target.x - this.x; const dy = this.target.y - this.y; const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < this.speed * deltaTime || distance < this.size / 2) {
             this.target.takeDamage(this.damage);
+            if (this.splashRadius > 0) { for (const enemy of enemies) { if (enemy === this.target || enemy.isDefeated) continue; const distToSplashVictimSq = (enemy.x - this.target.x) * (enemy.x - this.target.x) + (enemy.y - this.target.y) * (enemy.y - this.target.y); if (distToSplashVictimSq < this.splashRadius * this.splashRadius) { enemy.takeDamage(this.splashDamage); } } }
             this.isMarkedForRemoval = true;
-        } else {
-            // Move towards target
-            this.x += (dx / distance) * this.speed * deltaTime;
-            this.y += (dy / distance) * this.speed * deltaTime;
-        }
+        } else { this.x += (dx / distance) * this.speed * deltaTime; this.y += (dy / distance) * this.speed * deltaTime; }
     }
-
     draw(ctx) {
-        // No need to check isMarkedForRemoval here if gameLoop filters before drawing
-        ctx.fillStyle = 'cyan';
-        ctx.beginPath(); // Use beginPath for shapes like circles
-        ctx.arc(this.x, this.y, this.width / 2, 0, Math.PI * 2); // Draw as a small circle
-        ctx.fill();
+        ctx.save(); ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     }
 }
-
-// Ensure startNewWave and other necessary functions are globally accessible if needed by older parts,
-// or refactor to avoid global exposure if possible.
-// window.startNewWave = startNewWave; // Example, if it were still needed globally.
-// window.resetGame = resetGame; // Example
-// window.togglePause = () => { isPaused = !isPaused; }; // Example for external control
