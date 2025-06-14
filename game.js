@@ -184,7 +184,7 @@ function hideTowerInfoPanel() {
 if (canvas) {
     canvas.addEventListener('click',(e)=>{
         if(isGameOver||isPaused)return;
-        const rect=canvas.getBoundingClientRect();const x=e.clientX-rect.left;const y=e.clientY-r.top;
+        const rect=canvas.getBoundingClientRect();const x=e.clientX-rect.left;const y=e.clientY-rect.top;
         const gridX=Math.floor(x/CELL_SIZE);const gridY=Math.floor(y/CELL_SIZE);
 
         if(gridY<0||gridY>=GRID_SIZE||gridX<0||gridX>=GRID_SIZE) { // Clicked outside

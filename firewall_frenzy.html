@@ -7,8 +7,9 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="info">
-    <h1>🛡️ ByteBlock: Firewall Frenzy</h1>
+  <div id="mainContainer">
+    <div id="info">
+      <h1>🛡️ ByteBlock: Firewall Frenzy</h1>
     <p>Click on grid to place a tower. Defend the core from malware!</p>
     <!-- Game Info Displays -->
     <span id="livesDisplay">Lives: 10</span>
@@ -17,11 +18,12 @@
     <span id="levelDisplay">Level: 1</span>
     <span id="waveDisplay">Wave: 0</span>
     <span id="towerSelectDisplay">Selected: Packet Blaster</span> <!-- Added for selected tower name -->
-  </div>
-  <canvas id="gameCanvas" width="600" height="600"></canvas>
-  <div id="controls">
-    <!-- Game Control Buttons -->
-    <button id="startGameButton">Start Game</button>
+    </div>
+    <div id="gameArea">
+      <canvas id="gameCanvas" width="600" height="600"></canvas>
+      <div id="controls">
+        <!-- Game Control Buttons -->
+        <button id="startGameButton">Start Game</button>
     <button id="resumeGameButton">Resume Game</button>
     <button id="newGameButton">New Game</button>
     <!-- Tower Selection Buttons -->
@@ -31,6 +33,8 @@
     <button class="tower-select-button" id="selectAntiVirusCannonButton" data-tower-type="ANTIVIRUS_CANNON">AV Cannon (125)</button>
     <button class="tower-select-button" id="selectMlSniperButton" data-tower-type="ML_SNIPER">ML Sniper (175)</button>
     <button class="tower-select-button" id="selectFirewallWallButton" data-tower-type="FIREWALL_WALL">Firewall (40)</button>
+      </div>
+    </div>
   </div>
 
   <div id="towerInfoPanel" style="display: none;">
