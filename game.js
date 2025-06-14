@@ -4,6 +4,11 @@ const ctx = canvas.getContext('2d');
 const startGameButton = document.getElementById('startGameButton');
 const resumeGameButton = document.getElementById('resumeGameButton');
 const newGameButton = document.getElementById('newGameButton');
+const soundFire = document.getElementById('soundFire');
+const soundKilled = document.getElementById('soundKilled');
+const soundLevelFinished = document.getElementById('soundLevelFinished');
+const soundGameWon = document.getElementById('soundGameWon');
+const soundGameOver = document.getElementById('soundGameOver');
 // Tower Info Panel Elements (will be accessed after DOMContentLoaded)
 let towerInfoPanel, infoTowerName, infoTowerLevel, infoTowerStat1, infoTowerStat2, infoTowerStat3, infoTowerSpecial, upgradeTowerButton, closeTowerInfoButton;
 
@@ -74,10 +79,55 @@ const enemyPaths = { /* ... (as defined before) ... */ north:[{x:300,y:0},{x:300
 const MAX_LEVELS = 10;
 let levelSettings = [];
 const allPathKeys = Object.keys(enemyPaths);
+
 for (let i = 0; i < MAX_LEVELS; i++) {
-    const currentLevelNum = i + 1; const numWavesForLevel = 2 + currentLevelNum; const waveCfgs = [];
+    const currentLevelNum = i + 1;
+    const numWavesForLevel = 2 + currentLevelNum;
+    const waveCfgs = [];
+
+    // Determine paths for THIS level (refined)
+    let pathsForThisEntireLevel = [];
+    if (allPathKeys.length > 0) {
+        const path1Key = allPathKeys[i % allPathKeys.length];
+        pathsForThisEntireLevel.push(enemyPaths[path1Key]);
+
+        if (allPathKeys.length > 1) {
+            let path2KeyIndex = (i + 1) % allPathKeys.length;
+            // Ensure the second path is different from the first if possible
+            if (allPathKeys[path2KeyIndex] === path1Key) {
+                path2KeyIndex = (i + 2) % allPathKeys.length;
+            }
+            // If still same (e.g., only 1 unique path, or 2 paths and indices wrapped around to be same)
+            // we push it anyway. If it's the same path object, enemy spawning logic will handle it.
+            // If different paths were available and path2KeyIndex is now different, we get two distinct paths.
+            if (allPathKeys[path2KeyIndex]) { // Check if the key exists
+                 pathsForThisEntireLevel.push(enemyPaths[allPathKeys[path2KeyIndex]]);
+            } else if (allPathKeys.length > 0) { // Fallback if path2KeyIndex is somehow invalid but keys exist
+                 pathsForThisEntireLevel.push(enemyPaths[allPathKeys[0]]); // Push first path again
+            }
+        } else {
+            // If only one path definition, use it for the second "slot" as well
+            pathsForThisEntireLevel.push(enemyPaths[path1Key]);
+        }
+    }
+
+    if (pathsForThisEntireLevel.length === 0 && allPathKeys.length > 0) {
+        // This case should ideally not be reached if allPathKeys.length > 0
+        // but as a fallback, populate with the first available path to prevent empty paths array.
+        console.warn("Warning: pathsForThisEntireLevel was empty but allPathKeys was not. Defaulting to first path.");
+        pathsForThisEntireLevel.push(enemyPaths[allPathKeys[0]]);
+        pathsForThisEntireLevel.push(enemyPaths[allPathKeys[0]]);
+    } else if (allPathKeys.length === 0) {
+         console.error("CRITICAL: allPathKeys is empty. No paths available for level generation.");
+         // Consider adding a default dummy path:
+         // pathsForThisEntireLevel.push([{x:0,y:canvas.height/2},{x:canvas.width,y:canvas.height/2}]);
+         // pathsForThisEntireLevel.push([{x:0,y:canvas.height/2},{x:canvas.width,y:canvas.height/2}]);
+    }
+
+
     for (let j = 0; j < numWavesForLevel; j++) {
-        const waveNumInLevel = j + 1; let typesForThisWave = [];
+        const waveNumInLevel = j + 1; // already exists
+        let typesForThisWave = []; // already exists
         const enemyCountThisWave = 3 + waveNumInLevel + Math.floor(currentLevelNum / 2) + i; // Gradual increase
         for(let k=0; k < enemyCountThisWave; k++) {
             if (currentLevelNum >= 4 && k % (6 - Math.min(3, Math.floor(currentLevelNum/2))) === 0) typesForThisWave.push('CRYPTO_LOCKER');
@@ -85,12 +135,9 @@ for (let i = 0; i < MAX_LEVELS; i++) {
             else if (currentLevelNum >= 2 && k % (4 - Math.min(2, Math.floor(currentLevelNum/3))) === 0) typesForThisWave.push('TROJAN_BEAST');
             else typesForThisWave.push('BUGLET');
         }
-        let pathsForThisWave = [enemyPaths[allPathKeys[(currentLevelNum + waveNumInLevel - 2) % allPathKeys.length]]];
-        if (currentLevelNum > 1 && waveNumInLevel % 2 !== 0 && allPathKeys.length > 1) {  // Change when 2nd path introduced
-            const secondPathKey = allPathKeys[(currentLevelNum + waveNumInLevel -1) % allPathKeys.length];
-            if (pathsForThisWave[0] !== enemyPaths[secondPathKey]) { pathsForThisWave.push(enemyPaths[secondPathKey]); }
-            else if (allPathKeys.length > 2) { pathsForThisWave.push(enemyPaths[allPathKeys[(currentLevelNum + waveNumInLevel) % allPathKeys.length]]); }
-        }
+
+        let pathsForThisWave = pathsForThisEntireLevel; // Use the paths determined for the entire level
+
         waveCfgs.push({ paths: pathsForThisWave, enemyTypes: typesForThisWave });
     }
     levelSettings.push({ level: currentLevelNum, waves: waveCfgs.length, healthMultiplier: 1 + (i * 0.23), speedMultiplier: 1 + (i * 0.10), waveConfigs: waveCfgs });
@@ -104,16 +151,98 @@ let isGameOver = false; let gameWon = false; let waveInProgress = false;
 let enemiesSpawnedThisWave = 0; let enemySpawnTimer = 0; let enemySpawnCounterForPathSelection = 0;
 let isPaused = false; let lastTime = 0; let placementGrid = [];
 
+// --- Sound Helper Function ---
+function playSound(soundElement) {
+    if (soundElement && typeof soundElement.play === 'function') {
+        soundElement.currentTime = 0; // Rewind to the start
+        soundElement.play().catch(error => console.error("Error playing sound:", error));
+    } else {
+        console.warn("Sound element not found or not playable:", soundElement);
+    }
+}
+
 // --- Grid, Path, Drawing, and Core Game Logic ---
 function initializePlacementGrid() { /* ... (no change) ... */ placementGrid=Array(GRID_SIZE).fill(null).map(()=>Array(GRID_SIZE).fill(true));for(const pathName in enemyPaths){const path=enemyPaths[pathName];for(let i=0;i<path.length;i++){const p1=path[i];const p1GridX=Math.floor(p1.x/CELL_SIZE);const p1GridY=Math.floor(p1.y/CELL_SIZE);if(p1GridX>=0&&p1GridX<GRID_SIZE&&p1GridY>=0&&p1GridY<GRID_SIZE){placementGrid[p1GridY][p1GridX]=false;}if(i<path.length-1){const p2=path[i+1];const dx=p2.x-p1.x;const dy=p2.y-p1.y;const steps=Math.max(Math.abs(dx),Math.abs(dy))/(CELL_SIZE/4);for(let step=0;step<=steps;step++){const x=p1.x+(dx/steps)*step;const y=p1.y+(dy/steps)*step;const gridX=Math.floor(x/CELL_SIZE);const gridY=Math.floor(y/CELL_SIZE);if(gridX>=0&&gridX<GRID_SIZE&&gridY>=0&&gridY<GRID_SIZE){placementGrid[gridY][gridX]=false;}}}}}}
 function drawGrid(ctx) { /* ... (no change) ... */ for(let r=0;r<GRID_SIZE;r++){for(let c=0;c<GRID_SIZE;c++){if(placementGrid[r]&&placementGrid[r][c]===false){ctx.fillStyle='#1B1B1B';}else if(placementGrid[r]&&placementGrid[r][c]===true){ctx.fillStyle='#2A2A2A';}else{ctx.fillStyle='#222222';}ctx.fillRect(c*CELL_SIZE,r*CELL_SIZE,CELL_SIZE,CELL_SIZE);ctx.strokeStyle='#333333';ctx.strokeRect(c*CELL_SIZE,r*CELL_SIZE,CELL_SIZE,CELL_SIZE);}}}
 function drawPaths(ctx) { /* ... (no change) ... */ ctx.save();ctx.globalAlpha=0.25;ctx.lineWidth=CELL_SIZE*0.7;for(const pathName in enemyPaths){const path=enemyPaths[pathName];if(path.length===0)continue;ctx.beginPath();if(pathName.includes("north"))ctx.strokeStyle='#7799dd';else if(pathName.includes("south"))ctx.strokeStyle='#dd7777';else if(pathName.includes("east"))ctx.strokeStyle='#77dd77';else if(pathName.includes("west"))ctx.strokeStyle='#dddd77';else ctx.strokeStyle='#666';for(let i=0;i<path.length;i++){const point=path[i];if(i===0)ctx.moveTo(point.x,point.y);else ctx.lineTo(point.x,point.y);}ctx.stroke();}ctx.restore();}
 
+function drawPathIndicators(ctx) {
+    if (isGameOver) return; // Don't draw if game is over
+
+    let pathsToIndicate;
+    const currentLevelIdx = currentLevel - 1; // 0-indexed
+
+    if (currentLevelIdx < 0 || currentLevelIdx >= levelSettings.length) return;
+
+    const currentLvlSettings = levelSettings[currentLevelIdx];
+    if (!currentLvlSettings || !currentLvlSettings.waveConfigs) return;
+
+    if (waveInProgress) {
+        // Only show indicators when wave is NOT in progress to avoid clutter.
+        return;
+    } else {
+        // Wave is NOT in progress.
+        // waveNumber is the number of completed waves in the current level (1-based for UI display, but effectively 0-indexed for next wave access here as it's post-increment or 0 if level just started)
+        // Or, if checkWaveCompletion just ran, waveNumber is the wave that just FINISHED.
+        // startNewWave increments waveNumber for the *new* wave.
+        // So, if !waveInProgress, waveNumber refers to the wave that *just ended* or 0 if the level just started.
+        // The next wave to be configured by startNewWave (if called) would be based on this current waveNumber.
+
+        let levelConfigToUse = currentLvlSettings;
+        let waveIndexInConfig = waveNumber; // If waveNumber is 0 (start of level), this is the 0th config.
+                                          // If waveNumber is 1 (after wave 1 ends), this is 1st config (for wave 2).
+
+        if (waveNumber >= currentLvlSettings.waveConfigs.length) { // All waves of current level done
+            const nextLevelActual = currentLevel + 1; // e.g. currentLevel 1 becomes 2
+            if (nextLevelActual > MAX_LEVELS) { return; /* Game won */ }
+
+            const nextLevelConfigIndex = currentLevel; // currentLevel is 1-based, so currentLevel is next 0-based index for levelSettings
+            if (nextLevelConfigIndex < levelSettings.length) {
+                levelConfigToUse = levelSettings[nextLevelConfigIndex];
+                waveIndexInConfig = 0; // First wave of next level
+            } else { return; /* Should be game won or error */ }
+        }
+
+        if (!levelConfigToUse || !levelConfigToUse.waveConfigs || waveIndexInConfig < 0 || waveIndexInConfig >= levelConfigToUse.waveConfigs.length) {
+            return; // No valid config found
+        }
+        pathsToIndicate = levelConfigToUse.waveConfigs[waveIndexInConfig].paths;
+    }
+
+    if (!pathsToIndicate || pathsToIndicate.length === 0) return;
+
+    ctx.save();
+    ctx.lineWidth = CELL_SIZE * 0.6; // Slightly thicker
+    // Pulsating alpha: (Math.sin(performance.now() / Period) + 1) / 2 gives range 0-1.
+    // Adjust period for speed, multiplier for amplitude, and additive for base alpha.
+    ctx.globalAlpha = 0.3 + (Math.sin(performance.now() / 250) + 1) * 0.35; // Pulsates between 0.3 and 1.0
+
+    for (const path of pathsToIndicate) {
+        if (!path || path.length === 0) continue;
+        ctx.beginPath();
+        ctx.strokeStyle = '#FFFF00'; // Bright yellow
+
+        const startPoint = path[0];
+        ctx.moveTo(startPoint.x, startPoint.y);
+
+        if (path.length > 1) {
+            const endPoint = path[1]; // Draw first segment
+            ctx.lineTo(endPoint.x, endPoint.y);
+        } else { // Path with only one point, draw a circle marker
+            ctx.arc(startPoint.x, startPoint.y, CELL_SIZE * 0.5, 0, Math.PI * 2);
+        }
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
 function gameLoop(currentTime) {
     if (isPaused && !isGameOver) { requestAnimationFrame(gameLoop); return; }
     const deltaTime = (currentTime - (lastTime || currentTime)) / 1000; lastTime = currentTime;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawGrid(ctx); drawPaths(ctx);
+    drawGrid(ctx);
+    drawPaths(ctx);
+    drawPathIndicators(ctx); // Add this line
     if (isGameOver) { displayGameOver(); return; }
     handleEnemySpawning(deltaTime);
     towers = towers.filter(tower => !tower.isMarkedForRemoval);
@@ -124,10 +253,54 @@ function gameLoop(currentTime) {
     checkWaveCompletion(); requestAnimationFrame(gameLoop);
 }
 
-function displayGameOver() { /* ... (no change) ... */ ctx.save();ctx.fillStyle="rgba(0,0,0,0.75)";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.font="48px monospace";ctx.textAlign="center";if(gameWon){ctx.fillStyle="gold";ctx.fillText("YOU WON!",canvas.width/2,canvas.height/2-40);ctx.font="24px monospace";ctx.fillStyle="white";ctx.fillText("All levels cleared!",canvas.width/2,canvas.height/2);}else{ctx.fillStyle="red";ctx.fillText("GAME OVER",canvas.width/2,canvas.height/2-20);}ctx.font="24px monospace";ctx.fillStyle="white";ctx.fillText(`Final Score: ${score}`,canvas.width/2,canvas.height/2+(gameWon?40:30));if(startGameButton){startGameButton.disabled=false;startGameButton.textContent='Play Again?';}if(resumeGameButton)resumeGameButton.disabled=true;ctx.restore();}
+function displayGameOver() {
+    if (!gameWon) {
+        playSound(soundGameOver);
+    }
+    /* ... (no change) ... */ ctx.save();ctx.fillStyle="rgba(0,0,0,0.75)";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.font="48px monospace";ctx.textAlign="center";if(gameWon){ctx.fillStyle="gold";ctx.fillText("YOU WON!",canvas.width/2,canvas.height/2-40);ctx.font="24px monospace";ctx.fillStyle="white";ctx.fillText("All levels cleared!",canvas.width/2,canvas.height/2);}else{ctx.fillStyle="red";ctx.fillText("GAME OVER",canvas.width/2,canvas.height/2-20);}ctx.font="24px monospace";ctx.fillStyle="white";ctx.fillText(`Final Score: ${score}`,canvas.width/2,canvas.height/2+(gameWon?40:30));if(startGameButton){startGameButton.disabled=false;startGameButton.textContent='Play Again?';}if(resumeGameButton)resumeGameButton.disabled=true;ctx.restore();}
 function getEnemiesThisWaveCount() { /* ... (no change) ... */ if(currentLevel>MAX_LEVELS||waveNumber===0||currentLevel===0)return 0;const i=currentLevel-1;const j=waveNumber-1;if(!levelSettings[i]||!levelSettings[i].waveConfigs[j]||!levelSettings[i].waveConfigs[j].enemyTypes){console.error(`Incomplete wave config for L${currentLevel}W${waveNumber}`);return 0;}return levelSettings[i].waveConfigs[j].enemyTypes.length;}
 function checkWaveCompletion() { /* ... (no change) ... */ const count=getEnemiesThisWaveCount();if(waveInProgress&&enemiesSpawnedThisWave>=count&&enemies.length===0&&!isGameOver){waveInProgress=false;console.log(`L${currentLevel}W${waveNumber} Complete!`);currency+=25+waveNumber*5+currentLevel*10;updateGameInfoDisplays();setTimeout(()=>{if(!isGameOver)startNewWave();},WAVE_END_DELAY);}}
-function startNewWave() { /* ... (no change) ... */ if(isGameOver)return;waveNumber++;const i=currentLevel-1;if(i>=levelSettings.length){console.error("Level settings error.");isGameOver=true;gameWon=true;displayGameOver();return;}const conf=levelSettings[i];if(waveNumber>conf.waveConfigs.length){currentLevel++;waveNumber=1;currency+=100*(currentLevel-1);console.log(`L${currentLevel-1} complete! -> L${currentLevel}`);if(currentLevel>MAX_LEVELS){isGameOver=true;gameWon=true;console.log("All levels cleared!");updateGameInfoDisplays();return;}}waveInProgress=true;enemiesSpawnedThisWave=0;enemySpawnTimer=ENEMY_SPAWN_INTERVAL;enemySpawnCounterForPathSelection=0;console.log(`Starting L${currentLevel}W${waveNumber}`);updateGameInfoDisplays();}
+function startNewWave() { /* ... (no change) ... */
+    if(isGameOver) return;
+    waveNumber++;
+    const i = currentLevel - 1;
+
+    if(i >= levelSettings.length) { // Should ideally be caught by currentLevel > MAX_LEVELS check first
+        console.error("Level settings error - beyond MAX_LEVELS or config missing.");
+        isGameOver = true;
+        gameWon = true; // Assume win if settings run out beyond max levels
+        playSound(soundGameWon);
+        displayGameOver();
+        return;
+    }
+
+    const conf = levelSettings[i];
+    if (waveNumber > conf.waveConfigs.length) {
+        if (currentLevel < MAX_LEVELS) { // Check if it's a regular level completion, not final one
+            playSound(soundLevelFinished);
+        }
+        currentLevel++;
+        waveNumber = 1;
+        currency += 100 * (currentLevel - 1);
+        console.log(`L${currentLevel - 1} complete! -> L${currentLevel}`);
+
+        if (currentLevel > MAX_LEVELS) {
+            isGameOver = true;
+            gameWon = true;
+            playSound(soundGameWon);
+            console.log("All levels cleared!");
+            updateGameInfoDisplays();
+            // displayGameOver(); // displayGameOver is called by gameLoop if isGameOver is true
+            return;
+        }
+    }
+    waveInProgress = true;
+    enemiesSpawnedThisWave = 0;
+    enemySpawnTimer = ENEMY_SPAWN_INTERVAL;
+    enemySpawnCounterForPathSelection = 0;
+    console.log(`Starting L${currentLevel}W${waveNumber}`);
+    updateGameInfoDisplays();
+}
 function resetGame() { /* ... (added selectedTowerInstance = null) ... */ selectedTowerType='PACKET_BLASTER';selectedTowerInstance=null;hideTowerInfoPanel();towers=[];enemies=[];projectiles=[];score=0;lives=10;currency=200;waveNumber=0;currentLevel=1;isGameOver=false;gameWon=false;waveInProgress=false;enemiesSpawnedThisWave=0;enemySpawnCounterForPathSelection=0;isPaused=false;lastTime=performance.now();initializePlacementGrid();updateGameInfoDisplays();if(startGameButton){startGameButton.disabled=false;startGameButton.textContent='Start Game';}if(resumeGameButton)resumeGameButton.disabled=true;if(newGameButton)newGameButton.disabled=false;ctx.clearRect(0,0,canvas.width,canvas.height);drawGrid(ctx);drawPaths(ctx);ctx.save();ctx.font="20px monospace";ctx.fillStyle="#0f0";ctx.textAlign="center";ctx.fillText("Press 'Start Game' to begin!",canvas.width/2,canvas.height/2);ctx.restore();}
 
 function updateGameInfoDisplays() { /* ... (no change) ... */ const i=currentLevel-1;let totalWaves='N/A';if(i>=0&&i<levelSettings.length&&levelSettings[i]&&levelSettings[i].waveConfigs)totalWaves=levelSettings[i].waveConfigs.length;if(document.getElementById('livesDisplay'))document.getElementById('livesDisplay').textContent=`Lives: ${lives}`;if(document.getElementById('scoreDisplay'))document.getElementById('scoreDisplay').textContent=`Score: ${score}`;if(document.getElementById('currencyDisplay'))document.getElementById('currencyDisplay').textContent=`Currency: ${currency}`;if(document.getElementById('levelDisplay'))document.getElementById('levelDisplay').textContent=`Level: ${currentLevel}`;if(document.getElementById('waveDisplay'))document.getElementById('waveDisplay').textContent=`Wave: ${waveNumber}/${totalWaves}`;const ts=document.getElementById('towerSelectDisplay');if(ts&&TOWER_SPECS[selectedTowerType])ts.textContent=`Selected: ${TOWER_SPECS[selectedTowerType].name}`;else if(ts)ts.textContent='Selected: None';}
@@ -298,9 +471,9 @@ class Enemy { /* ... (constructor uses currentLevelContext, update uses towersAr
     update(deltaTime,towersArray){if(this.isDefeated)return;this.currentSpeed=this.baseSpeed;this.currentTargettedBlocker=null;for(const effectName in this.effects){const effect=this.effects[effectName];if(effect.active){if(effect.duration>0){if(effect.type==='slow')this.currentSpeed*=effect.multiplier;effect.duration-=deltaTime;}else this.removeEffect(effectName);}}
     if(this.type==='CRYPTO_LOCKER'&&!this.isDefeated){for(const tower of towersArray){if(tower.effects.disabled&&tower.effects.disabled.active)continue;const distToTower=Math.sqrt(Math.pow(this.x-tower.x,2)+Math.pow(this.y-tower.y,2));if(distToTower<ENEMY_SPECS.CRYPTO_LOCKER.disableRange){tower.applyEffect('disabled',{duration:ENEMY_SPECS.CRYPTO_LOCKER.disableDuration});this.isDefeated=true;score+=this.points;currency+=this.currencyDrop;updateGameInfoDisplays();break;}}if(this.isDefeated)return;}
     const enemyGridX=Math.floor(this.x/CELL_SIZE);const enemyGridY=Math.floor(this.y/CELL_SIZE);for(const tower of towersArray){if(tower.type==='FIREWALL_WALL'&&!tower.isMarkedForRemoval){if(Math.abs(enemyGridX-tower.gridX)<=1&&Math.abs(enemyGridY-tower.gridY)<=1){const distToWallSq=Math.pow(this.x-tower.x,2)+Math.pow(this.y-tower.y,2);const collisionDist=(this.width/2+tower.width/2);if(distToWallSq<collisionDist*collisionDist){this.currentTargettedBlocker=tower;break;}}}}
-    if(this.currentTargettedBlocker){if(this.attackCooldown>0)this.attackCooldown-=deltaTime;if(this.attackCooldown<=0){this.currentTargettedBlocker.takeDamage(this.attackDamage);this.attackCooldown=1/this.attackRate;}}else{if(this.pathIndex>=this.path.length){this.isDefeated=true;if(!isGameOver){lives--;if(lives<0)lives=0;updateGameInfoDisplays();if(lives===0){isGameOver=true;gameWon=false;}}return;}const targetPoint=this.path[this.pathIndex];const dx=targetPoint.x-this.x;const dy=targetPoint.y-this.y;const distance=Math.sqrt(dx*dx+dy*dy);if(distance<this.currentSpeed*deltaTime*1.1){this.x=targetPoint.x;this.y=targetPoint.y;this.pathIndex++;if(this.pathIndex>=this.path.length){this.isDefeated=true;if(!isGameOver){lives--;if(lives<0)lives=0;updateGameInfoDisplays();if(lives===0){isGameOver=true;gameWon=false;}}}}else{this.x+=(dx/distance)*this.currentSpeed*deltaTime;this.y+=(dy/distance)*this.currentSpeed*deltaTime;}}}
+    if(this.currentTargettedBlocker){if(this.attackCooldown>0)this.attackCooldown-=deltaTime;if(this.attackCooldown<=0){this.currentTargettedBlocker.takeDamage(this.attackDamage);this.attackCooldown=1/this.attackRate;}}else{if(this.pathIndex>=this.path.length){this.isDefeated=true;if(!isGameOver){lives--;if(lives<0)lives=0;updateGameInfoDisplays();if(lives===0){isGameOver=true;gameWon=false;if(!gameWon) playSound(soundGameOver);}}return;}const targetPoint=this.path[this.pathIndex];const dx=targetPoint.x-this.x;const dy=targetPoint.y-this.y;const distance=Math.sqrt(dx*dx+dy*dy);if(distance<this.currentSpeed*deltaTime*1.1){this.x=targetPoint.x;this.y=targetPoint.y;this.pathIndex++;if(this.pathIndex>=this.path.length){this.isDefeated=true;if(!isGameOver){lives--;if(lives<0)lives=0;updateGameInfoDisplays();if(lives===0){isGameOver=true;gameWon=false;if(!gameWon) playSound(soundGameOver);}}}}else{this.x+=(dx/distance)*this.currentSpeed*deltaTime;this.y+=(dy/distance)*this.currentSpeed*deltaTime;}}}
     draw(ctx){ctx.save();if(this.effects.slow&&this.effects.slow.active){ctx.fillStyle='rgba(100,100,255,0.8)';}else{ctx.fillStyle=this.color;}ctx.fillRect(this.x-this.width/2,this.y-this.height/2,this.width,this.height);const hw=this.width;const hh=5;const hx=this.x-hw/2;const hy=this.y-this.height/2-hh-3;ctx.fillStyle='#333';ctx.fillRect(hx,hy,hw,hh);const hp=Math.max(0,this.health/this.maxHealth);ctx.fillStyle='lime';ctx.fillRect(hx,hy,hw*hp,hh);ctx.restore();}
-    takeDamage(amount){this.health-=amount;let defeated=false;if(this.health<=0&&!this.isDefeated){this.isDefeated=true;score+=this.points;currency+=this.currencyDrop;updateGameInfoDisplays();defeated=true;}return defeated;}
+    takeDamage(amount){this.health-=amount;let defeated=false;if(this.health<=0&&!this.isDefeated){this.isDefeated=true;score+=this.points;currency+=this.currencyDrop;playSound(soundKilled);updateGameInfoDisplays();defeated=true;}return defeated;}
 }
 
 class Tower {
@@ -404,6 +577,7 @@ class Tower {
     shoot(target, projectiles) {
         if (!this.projectileSpecs) return;
         if (Math.random() > this.currentAccuracy) { console.log(`${this.name} missed due to low accuracy!`); return; } // Missed shot
+        playSound(soundFire);
         projectiles.push(new Projectile(this.x, this.y, target, this.projectileSpecs, this));
     }
     draw(ctx) { /* ... (draw disabled state) ... */
