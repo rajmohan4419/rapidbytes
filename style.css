@@ -1,23 +1,70 @@
 body {
+    font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 100vh;
+    background-color: #f0f0f0;
     margin: 0;
-    font-family: sans-serif;
+    padding-top: 20px;
 }
 
-#game-container {
+h1 {
     text-align: center;
+    color: #333;
 }
 
-button {
-    padding: 10px 20px;
-    font-size: 1.2em;
+#gameCanvas {
+    border: 2px solid #333;
+    background-color: #c8e6c9; /* Light green for a grassy field */
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.1);
+}
+
+#gameInfo {
+    display: flex;
+    justify-content: space-around;
+    width: 800px;
+    margin: 15px 0;
+}
+
+#gameInfo span {
+    padding: 8px 15px;
+    background-color: #5c6bc0; /* Indigo background */
+    color: white;
+    border-radius: 5px;
+    font-size: 16px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+}
+
+#gameControls {
+    display: flex;
+    justify-content: center;
+    width: 800px;
     margin-bottom: 20px;
 }
 
-#counter {
-    font-size: 2em;
+#gameControls button {
+    padding: 12px 25px;
+    font-size: 18px;
+    margin: 0 10px;
+    background-color: #4CAF50; /* Green for Start Game */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.15);
+}
+
+#gameControls button#placeTowerButton {
+    background-color: #008CBA; /* Blue for Place Tower */
+}
+
+#gameControls button:hover {
+    opacity: 0.9;
+}
+
+#gameControls button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
