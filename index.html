@@ -1,21 +1,154 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Tower Defense Game</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>ByteBlock: Firewall Frenzy</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      color: #0f0;
+      font-family: monospace;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background: #222;
+      border: 2px solid #0f0;
+    }
+    #info {
+      text-align: center;
+      margin: 10px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Tower Defense Game</h1>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="gameInfo">
-        <span id="scoreDisplay">Score: 0</span>
-        <span id="livesDisplay">Lives: 10</span>
-        <span id="currencyDisplay">Currency: 100</span>
-    </div>
-    <div id="gameControls">
-        <button id="startGameButton">Start Game</button>
-        <button id="placeTowerButton">Place Tower (Cost: 50)</button>
-    </div>
-    <script src="game.js"></script> </body>
+  <div id="info">
+    <h1>🛡️ ByteBlock: Firewall Frenzy</h1>
+    <p>Click on grid to place a tower. Defend the core from malware!</p>
+  </div>
+  <canvas id="gameCanvas" width="600" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const gridSize = 10;
+    const cellSize = canvas.width / gridSize;
+
+    const towers = [];
+    const enemies = [];
+    let coreHealth = 10;
+    let frame = 0;
+
+    const enemyPath = [];
+    for (let i = 0; i < gridSize; i++) {
+      enemyPath.push([i, 0]);
+    }
+
+    class Tower {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.range = 2;
+        this.cooldown = 0;
+      }
+      draw() {
+        ctx.fillStyle = '#0ff';
+        ctx.fillRect(this.x * cellSize + 5, this.y * cellSize + 5, cellSize - 10, cellSize - 10);
+      }
+      update() {
+        if (this.cooldown > 0) this.cooldown--;
+        for (let enemy of enemies) {
+          const dx = enemy.x - this.x;
+          const dy = enemy.y - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist <= this.range && this.cooldown === 0) {
+            enemy.hp--;
+            this.cooldown = 30;
+            return;
+          }
+        }
+      }
+    }
+
+    class Enemy {
+      constructor() {
+        this.hp = 3;
+        this.pathIndex = 0;
+        [this.x, this.y] = enemyPath[this.pathIndex];
+      }
+      draw() {
+        ctx.fillStyle = '#f00';
+        ctx.beginPath();
+        ctx.arc(this.x * cellSize + cellSize/2, this.y * cellSize + cellSize/2, cellSize/3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      update() {
+        if (this.hp <= 0) return 'dead';
+        if (this.pathIndex < enemyPath.length - 1) {
+          this.pathIndex++;
+          [this.x, this.y] = enemyPath[this.pathIndex];
+        } else {
+          coreHealth--;
+          return 'core';
+        }
+      }
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = '#333';
+      for (let x = 0; x < gridSize; x++) {
+        for (let y = 0; y < gridSize; y++) {
+          ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / cellSize);
+      const y = Math.floor((e.clientY - rect.top) / cellSize);
+      if (!towers.some(t => t.x === x && t.y === y)) {
+        towers.push(new Tower(x, y));
+      }
+    });
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+
+      if (frame % 120 === 0) {
+        enemies.push(new Enemy());
+      }
+
+      for (let tower of towers) {
+        tower.update();
+        tower.draw();
+      }
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const result = enemies[i].update();
+        if (result === 'dead' || result === 'core') {
+          enemies.splice(i, 1);
+        } else {
+          enemies[i].draw();
+        }
+      }
+
+      ctx.fillStyle = '#0f0';
+      ctx.fillText('Core Health: ' + coreHealth, 10, canvas.height - 10);
+      if (coreHealth <= 0) {
+        ctx.fillStyle = '#f00';
+        ctx.font = '48px monospace';
+        ctx.fillText('GAME OVER', canvas.width / 4, canvas.height / 2);
+        return;
+      }
+      frame++;
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
 </html>
