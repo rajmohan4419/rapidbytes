@@ -1,3 +1,6 @@
-# rapidbytes
+# Braindrain Game
 
-This is the official website for rapidbytes.in.
+This repository now hosts the exciting Braindrain Game!
+
+## How to Play
+Open `index.html` in your browser and click the button!
