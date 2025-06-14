@@ -5,6 +5,7 @@ const placeTowerButton = document.getElementById('placeTowerButton'); // Not use
 const startGameButton = document.getElementById('startGameButton');
 
 // Game elements
+
 let towers = [];
 let enemies = [];
 let projectiles = [];
