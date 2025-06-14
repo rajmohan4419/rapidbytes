@@ -5,6 +5,7 @@ const placeTowerButton = document.getElementById('placeTowerButton'); // Not use
 const startGameButton = document.getElementById('startGameButton');
 
 // Game elements
+
 let towers = [];
 let enemies = [];
 let projectiles = [];
@@ -159,7 +160,7 @@ function handleEnemySpawning(deltaTime) {
             enemiesSpawnedThisWave++;
             enemySpawnTimer = ENEMY_SPAWN_INTERVAL;
         }
-    }
+    // Line 163 (extra '}') was here and is now removed.
 }
 
 // --- Classes ---
