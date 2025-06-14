@@ -13,63 +13,101 @@ h1 {
   text-align: center;
   color: #0f0;
   margin-top: 20px;
-  margin-bottom: 10px; /* Adjusted margin */
+  margin-bottom: 10px;
 }
 
 #gameCanvas {
   border: 2px solid #0f0;
   background-color: #222;
-  box-shadow: 3px 3px 8px rgba(0,0,0,0.5); /* Adjusted shadow for dark theme */
-  margin: 20px auto; /* Ensures centering and spacing */
-  display: block; /* Explicitly set for safety, though flex on body helps */
+  box-shadow: 3px 3px 8px rgba(0,0,0,0.5);
+  margin: 15px auto; /* Reduced margin slightly */
+  display: block;
 }
 
 #info {
   display: flex;
-  justify-content: space-around; /* Spreads items evenly */
-  width: 600px; /* Match canvas width */
-  margin: 15px 0;
+  flex-wrap: wrap; /* Allow info items to wrap on smaller screens if needed */
+  justify-content: center; /* Center items if they wrap */
+  width: 600px;
+  margin: 10px 0; /* Reduced margin slightly */
 }
 
 #info span {
-  padding: 8px 15px;
-  background-color: #333; /* Darker boxes for info */
-  color: #0f0; /* Green text */
+  padding: 8px 12px; /* Adjusted padding slightly */
+  background-color: #333;
+  color: #0f0;
   border: 1px solid #0f0;
-  border-radius: 5px;
-  font-size: 1em;
-  margin: 0 5px; /* Spacing between info elements */
-  text-align: center; /* Ensure text is centered within the span */
+  border-radius: 4px; /* Slightly smaller radius */
+  margin: 5px 5px; /* Add vertical margin for wrapping */
+  font-size: 0.95em; /* Slightly smaller font */
+  text-align: center;
 }
 
 #controls {
   display: flex;
-  justify-content: center; /* Center buttons */
-  width: 600px; /* Match canvas width */
+  flex-wrap: wrap; /* Allow buttons to wrap */
+  justify-content: center;
+  width: 600px;
   margin-bottom: 20px;
 }
 
+/* General style for buttons in #controls, like Start, Pause */
 #controls button {
-  padding: 10px 20px;
-  font-size: 1em;
+  padding: 10px 15px; /* Adjusted padding */
+  font-size: 0.95em; /* Adjusted font size */
   font-family: monospace;
-  margin: 0 10px; /* Spacing between buttons */
-  background-color: #0a0; /* Brighter green for buttons */
-  color: #111; /* Dark text for contrast */
+  margin: 5px; /* Uniform margin */
+  background-color: #0a0;
+  color: #111;
   border: 1px solid #0f0;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease; /* Added color transition */
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #controls button:hover {
-  background-color: #0c0; /* Lighter green on hover */
-  color: #000; /* Darker text on hover for better contrast if needed */
+  background-color: #0c0;
+  color: #000;
 }
 
 #controls button:disabled {
-  background-color: #555; /* Greyed out for disabled */
-  color: #aaa; /* Lighter text for disabled */
+  background-color: #555;
+  color: #aaa;
   border-color: #777;
   cursor: not-allowed;
+}
+
+/* Styles for new tower selection buttons */
+.tower-select-button {
+  padding: 10px 12px; /* Fine-tuned padding */
+  font-size: 0.85em; /* Smaller font for more text */
+  margin: 5px; /* Consistent margin */
+  background-color: #005f00; /* Darker green */
+  color: #0f0; /* Green text */
+  border: 2px solid #0f0; /* Green border */
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+  min-width: 120px; /* Ensure buttons have a decent minimum width */
+  text-align: center;
+}
+
+.tower-select-button:hover {
+  background-color: #008c00; /* Brighter green on hover */
+  box-shadow: 0 0 8px #0f0;
+  color: #ccffcc; /* Lighter green text on hover */
+}
+
+.tower-select-button.active {
+  background-color: #00af00; /* Distinct active color */
+  color: #fff; /* White text for active */
+  box-shadow: 0 0 10px #0f0, inset 0 0 5px rgba(255, 255, 255, 0.5);
+  border-color: #fff; /* White border for active */
+}
+
+#controls hr {
+  width: 100%;
+  border: none;
+  border-top: 1px solid #444;
+  margin: 10px 0;
 }
