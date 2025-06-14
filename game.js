@@ -21,41 +21,41 @@ const ENEMY_SPAWN_INTERVAL = 0.6; // Slightly faster spawn
 
 // --- Enemy Specifications ---
 const ENEMY_SPECS = {
-    BUGLET: { name: "Buglet", baseHealth: 35, baseSpeed: 1.6, color: '#ADFF2F', widthModifier: 0.45, heightModifier: 0.45, points: 1, currencyDrop: 1, attackDamage: 5, attackRate: 1},
-    TROJAN_BEAST: { name: "Trojan Beast", baseHealth: 220, baseSpeed: 0.9, color: '#8B0000', widthModifier: 0.75, heightModifier: 0.75, points: 5, currencyDrop: 3, attackDamage: 15, attackRate: 0.5 },
-    SPAM_SWARM: { name: "Spam Swarm", baseHealth: 60, baseSpeed: 1.3, color: '#FF69B4', widthModifier: 0.5, heightModifier: 0.5, points: 2, currencyDrop: 1, special: 'accuracyDebuff', debuffRadius: CELL_SIZE * 2.5, accuracyReduction: 0.3 },
-    CRYPTO_LOCKER: { name: "CryptoLocker", baseHealth: 150, baseSpeed: 0.7, color: '#4B0082', widthModifier: 0.6, heightModifier: 0.6, points: 8, currencyDrop: 5, special: 'towerDisable', disableRange: CELL_SIZE * 0.8, disableDuration: 5 }
+    BUGLET: { name: "Buglet", baseHealth: 35, baseSpeed: 1.6, color: '#FF69B4', widthModifier: 0.45, heightModifier: 0.45, points: 1, currencyDrop: 1, attackDamage: 5, attackRate: 1},
+    TROJAN_BEAST: { name: "Trojan Beast", baseHealth: 220, baseSpeed: 0.9, color: '#800080', widthModifier: 0.75, heightModifier: 0.75, points: 5, currencyDrop: 3, attackDamage: 15, attackRate: 0.5 },
+    SPAM_SWARM: { name: "Spam Swarm", baseHealth: 60, baseSpeed: 1.3, color: '#FFA500', widthModifier: 0.5, heightModifier: 0.5, points: 2, currencyDrop: 1, special: 'accuracyDebuff', debuffRadius: CELL_SIZE * 2.5, accuracyReduction: 0.3 },
+    CRYPTO_LOCKER: { name: "CryptoLocker", baseHealth: 150, baseSpeed: 0.7, color: '#0000FF', widthModifier: 0.6, heightModifier: 0.6, points: 8, currencyDrop: 5, special: 'towerDisable', disableRange: CELL_SIZE * 0.8, disableDuration: 5 }
 };
 
 // --- Tower Specifications ---
 const TOWER_SPECS = {
     PACKET_BLASTER: {
-        name: "Packet Blaster", cost: 50, range: 100 * (CELL_SIZE / 20), fireRate: 5, color: '#00FFFF',
-        projectile: { damage: 8, speed: 350 * (CELL_SIZE / 20), color: '#00FFFF', size: CELL_SIZE / 4 },
+        name: "Packet Blaster", cost: 50, range: 100 * (CELL_SIZE / 20), fireRate: 5, color: '#FFFF00',
+        projectile: { damage: 8, speed: 350 * (CELL_SIZE / 20), color: '#FFFF00', size: CELL_SIZE / 4 },
         upgrades: [
             { cost: 75, projectile: { damage: 14 }, fireRate: 5.5, range: 115 * (CELL_SIZE/20) },
             { cost: 125, projectile: { damage: 22 }, fireRate: 6.0, range: 130 * (CELL_SIZE/20) }
         ]
     },
     ENCRYPTOR_NODE: {
-        name: "Encryptor Node", cost: 75, range: 70 * (CELL_SIZE / 20), fireRate: 0.8, color: '#FF00FF',
-        effect: { type: 'slow', duration: 2.5, multiplier: 0.5, pulseColor: 'rgba(255, 0, 255, 0.3)' },
+        name: "Encryptor Node", cost: 75, range: 70 * (CELL_SIZE / 20), fireRate: 0.8, color: '#00FFFF',
+        effect: { type: 'slow', duration: 2.5, multiplier: 0.5, pulseColor: 'rgba(0, 255, 255, 0.3)' },
         upgrades: [
             { cost: 100, effect: { duration: 3.0, multiplier: 0.45 }, range: 80 * (CELL_SIZE/20) },
             { cost: 150, effect: { duration: 3.5, multiplier: 0.40 }, range: 90 * (CELL_SIZE/20) }
         ]
     },
     ANTIVIRUS_CANNON: {
-        name: "AntiVirus Cannon", cost: 125, range: 130 * (CELL_SIZE / 20), fireRate: 0.75, color: '#FFA500',
-        projectile: { damage: 25, speed: 200 * (CELL_SIZE / 20), color: '#FFA500', size: CELL_SIZE / 3, splashRadius: 60 * (CELL_SIZE / 20), splashDamage: 12 },
+        name: "AntiVirus Cannon", cost: 125, range: 130 * (CELL_SIZE / 20), fireRate: 0.75, color: '#FF00FF',
+        projectile: { damage: 25, speed: 200 * (CELL_SIZE / 20), color: '#FF00FF', size: CELL_SIZE / 3, splashRadius: 60 * (CELL_SIZE / 20), splashDamage: 12 },
         upgrades: [
             { cost: 150, projectile: { damage: 35, splashDamage: 18, splashRadius: 65 * (CELL_SIZE/20) }, fireRate: 0.85 },
             { cost: 225, projectile: { damage: 50, splashDamage: 25, splashRadius: 70 * (CELL_SIZE/20) }, fireRate: 1.0 }
         ]
     },
     ML_SNIPER: {
-        name: "ML Sniper", cost: 175, range: 250 * (CELL_SIZE / 20), fireRate: 0.6, color: '#8A2BE2',
-        projectile: { damage: 60, speed: 450 * (CELL_SIZE / 20), color: '#9370DB' },
+        name: "ML Sniper", cost: 175, range: 250 * (CELL_SIZE / 20), fireRate: 0.6, color: '#FFA500',
+        projectile: { damage: 60, speed: 450 * (CELL_SIZE / 20), color: '#FFFF00' },
         special: 'learning', bonusDamageMultiplier: 1.5,
         upgrades: [
             { cost: 200, projectile: { damage: 80 }, bonusDamageMultiplier: 1.75, range: 270 * (CELL_SIZE/20) },
@@ -64,7 +64,7 @@ const TOWER_SPECS = {
     },
     FIREWALL_WALL: {
         name: "Firewall Wall", cost: 40, health: 300, duration: 25,
-        isBlocker: true, color: '#A9A9A9', widthModifier: 1.0, heightModifier: 1.0,
+        isBlocker: true, color: '#0000FF', widthModifier: 1.0, heightModifier: 1.0,
         upgrades: [
             { cost: 50, health: 450, duration: 35 },
             { cost: 75, health: 650, duration: 45 }
