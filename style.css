@@ -9,7 +9,6 @@ body {
   padding: 0;
 }
 
-
 h1 {
   text-align: center;
   color: #0f0;
@@ -21,43 +20,42 @@ h1 {
   border: 2px solid #0f0;
   background-color: #222;
   box-shadow: 3px 3px 8px rgba(0,0,0,0.5);
-  margin: 15px auto; /* Reduced margin slightly */
+  margin: 15px auto;
   display: block;
 }
 
 #info {
   display: flex;
-  flex-wrap: wrap; /* Allow info items to wrap on smaller screens if needed */
-  justify-content: center; /* Center items if they wrap */
+  flex-wrap: wrap;
+  justify-content: center;
   width: 600px;
-  margin: 10px 0; /* Reduced margin slightly */
+  margin: 10px 0;
 }
 
 #info span {
-  padding: 8px 12px; /* Adjusted padding slightly */
+  padding: 8px 12px;
   background-color: #333;
   color: #0f0;
   border: 1px solid #0f0;
-  border-radius: 4px; /* Slightly smaller radius */
-  margin: 5px 5px; /* Add vertical margin for wrapping */
-  font-size: 0.95em; /* Slightly smaller font */
+  border-radius: 4px;
+  margin: 5px 5px;
+  font-size: 0.95em;
   text-align: center;
 }
 
 #controls {
   display: flex;
-  flex-wrap: wrap; /* Allow buttons to wrap */
+  flex-wrap: wrap;
   justify-content: center;
   width: 600px;
   margin-bottom: 20px;
 }
 
-/* General style for buttons in #controls, like Start, Pause */
 #controls button {
-  padding: 10px 15px; /* Adjusted padding */
-  font-size: 0.95em; /* Adjusted font size */
+  padding: 10px 15px;
+  font-size: 0.95em;
   font-family: monospace;
-  margin: 5px; /* Uniform margin */
+  margin: 5px;
   background-color: #0a0;
   color: #111;
   border: 1px solid #0f0;
@@ -78,32 +76,31 @@ h1 {
   cursor: not-allowed;
 }
 
-/* Styles for new tower selection buttons */
 .tower-select-button {
-  padding: 10px 12px; /* Fine-tuned padding */
-  font-size: 0.85em; /* Smaller font for more text */
-  margin: 5px; /* Consistent margin */
-  background-color: #005f00; /* Darker green */
-  color: #0f0; /* Green text */
-  border: 2px solid #0f0; /* Green border */
+  padding: 10px 12px;
+  font-size: 0.85em;
+  margin: 5px;
+  background-color: #005f00;
+  color: #0f0;
+  border: 2px solid #0f0;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
-  min-width: 120px; /* Ensure buttons have a decent minimum width */
+  min-width: 120px;
   text-align: center;
 }
 
 .tower-select-button:hover {
-  background-color: #008c00; /* Brighter green on hover */
+  background-color: #008c00;
   box-shadow: 0 0 8px #0f0;
-  color: #ccffcc; /* Lighter green text on hover */
+  color: #ccffcc;
 }
 
 .tower-select-button.active {
-  background-color: #00af00; /* Distinct active color */
-  color: #fff; /* White text for active */
+  background-color: #00af00;
+  color: #fff;
   box-shadow: 0 0 10px #0f0, inset 0 0 5px rgba(255, 255, 255, 0.5);
-  border-color: #fff; /* White border for active */
+  border-color: #fff;
 }
 
 #controls hr {
@@ -111,4 +108,70 @@ h1 {
   border: none;
   border-top: 1px solid #444;
   margin: 10px 0;
+}
+
+/* Tower Info Panel Styles */
+#towerInfoPanel {
+  position: absolute;
+  top: 100px; /* Adjusted to avoid overlap with game title */
+  right: 20px;
+  width: 220px; /* Slightly wider */
+  background-color: rgba(10, 20, 10, 0.9); /* Dark, semi-transparent */
+  color: #0f0;
+  border: 1px solid #0f0;
+  padding: 15px;
+  border-radius: 5px;
+  font-family: monospace;
+  z-index: 100;
+  box-shadow: 0 0 15px #050;
+}
+
+#towerInfoPanel h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #0f0;
+  padding-bottom: 8px;
+  font-size: 1.1em;
+  text-align: center;
+}
+
+#towerInfoPanel p {
+  margin: 8px 0;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+#towerInfoPanel button {
+  width: 100%;
+  padding: 8px;
+  margin-top: 10px;
+  font-family: monospace;
+  font-size: 0.9em;
+  background-color: #005f00; /* Consistent with tower select */
+  color: #0f0;
+  border: 1px solid #0f0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+#towerInfoPanel button:hover {
+  background-color: #008c00;
+  color: #fff;
+}
+
+#towerInfoPanel button:disabled {
+  background-color: #333;
+  color: #777;
+  border-color: #555;
+  cursor: not-allowed;
+}
+
+#towerInfoPanel #closeTowerInfoButton {
+    background-color: #700; /* Reddish for close */
+    color: #fcc;
+    border-color: #c77;
+}
+#towerInfoPanel #closeTowerInfoButton:hover {
+    background-color: #a00;
+    color: #fff;
 }
