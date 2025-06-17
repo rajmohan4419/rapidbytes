@@ -1,0 +1,19 @@
+[debug] [2025-06-17T06:29:12.206Z] ----------------------------------------------------------------------
+[debug] [2025-06-17T06:29:12.213Z] Command:       /usr/bin/node /usr/local/bin/firebase init --debug
+[debug] [2025-06-17T06:29:12.216Z] CLI Version:   11.16.0
+[debug] [2025-06-17T06:29:12.216Z] Platform:      linux
+[debug] [2025-06-17T06:29:12.217Z] Node Version:  v18.19.1
+[debug] [2025-06-17T06:29:12.218Z] Time:          Tue Jun 17 2025 06:29:12 GMT+0000 (Coordinated Universal Time)
+[debug] [2025-06-17T06:29:12.218Z] ----------------------------------------------------------------------
+[debug]
+[debug] [2025-06-17T06:29:12.234Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-06-17T06:29:12.283Z] Error: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
+    at GoogleAuth.getApplicationDefaultAsync (/usr/local/lib/node_modules/firebase-tools/node_modules/google-auth-library/build/src/auth/googleauth.js:183:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async GoogleAuth.getClient (/usr/local/lib/node_modules/firebase-tools/node_modules/google-auth-library/build/src/auth/googleauth.js:565:17)
+    at async GoogleAuth.getAccessToken (/usr/local/lib/node_modules/firebase-tools/node_modules/google-auth-library/build/src/auth/googleauth.js:587:24)
+    at async autoAuth (/usr/local/lib/node_modules/firebase-tools/lib/requireAuth.js:24:19)
+    at async Object.requireAuth [as fn] (/usr/local/lib/node_modules/firebase-tools/lib/requireAuth.js:48:20)
+    at async /usr/local/lib/node_modules/firebase-tools/lib/command.js:214:17
+[error]
+[error] Error: Failed to authenticate, have you run firebase login?
