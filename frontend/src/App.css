@@ -1,38 +1,117 @@
+/* Basic Reset & Body Styling */
+/* Body styles moved to index.css */
+
 .App {
+  /* text-align: center; */ /* Removing default centering for overall app */
+}
+
+/* Header Styling */
+.App header { /* More specific selector if App component's div has className="App" */
+  background-color: #333;
+  color: white;
+  padding: 1rem 0;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.App header h1 {
+  margin: 0;
+  font-size: 2.5rem;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+/* Main Content Area */
+main {
+  display: block; /* Ensure main is treated as a block element */
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+article {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Headings */
+article h2 {
+  font-size: 2rem;
+  margin-bottom: 0.75em;
+  color: #333;
+}
+
+article h3 {
+  font-size: 1.5rem;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: #444;
+}
+
+/* Paragraphs */
+article p {
+  margin-bottom: 1em;
+  line-height: 1.7;
+}
+
+/* Lists */
+article ul,
+article ol {
+  margin-bottom: 1em;
+  padding-left: 20px; /* Standard list indentation */
+}
+
+article li {
+  margin-bottom: 0.5em;
+}
+
+/* Links */
+article a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+article a:hover {
+  text-decoration: underline;
+}
+
+/* Emphasis */
+article strong {
+  font-weight: bold;
+}
+
+article em {
+  font-style: italic;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1em;
+  border: 1px solid #ddd; /* Add a light border around the table itself */
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 12px; /* Increased padding for better readability */
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold; /* Ensure table headers are bold */
+}
+
+/* Footer Styling */
+.App footer { /* More specific selector */
+  text-align: center;
+  padding: 1.5rem 0;
+  margin-top: 30px;
+  border-top: 1px solid #ccc;
+  background-color: #333;
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.App footer p {
+  margin: 0;
 }
