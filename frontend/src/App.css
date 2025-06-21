@@ -1,117 +1,22 @@
-/* Basic Reset & Body Styling */
-/* Body styles moved to index.css */
+/* App.css */
+/* This file can be used for global styles or component-specific styles not covered by Tailwind. */
+/* Most of the previous styles are now handled by Tailwind utility classes or component-specific styling. */
 
+/* Example: Define a custom utility or component style if needed */
+/*
+.custom-button {
+  @apply py-2 px-4 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75;
+}
+*/
+
+/* Styling for the '✅' list item marker in HomePage if not using SVG/alternative */
+/* This is an example, actual rendering of list-style-type with emojis can be inconsistent. */
+/* For robust checkmarks, SVGs or pseudo-elements are better. */
+/* ul[style*="list-style-type: '✅'"] li::marker { */
+  /* content: '✅'; */ /* This might not work as expected universally */
+/* } */
+
+/* Ensure the .App container itself doesn't add conflicting styles if it was too specific before */
 .App {
-  /* text-align: center; */ /* Removing default centering for overall app */
-}
-
-/* Header Styling */
-.App header { /* More specific selector if App component's div has className="App" */
-  background-color: #333;
-  color: white;
-  padding: 1rem 0;
-  text-align: center;
-}
-
-.App header h1 {
-  margin: 0;
-  font-size: 2.5rem;
-}
-
-/* Main Content Area */
-main {
-  display: block; /* Ensure main is treated as a block element */
-}
-
-article {
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Headings */
-article h2 {
-  font-size: 2rem;
-  margin-bottom: 0.75em;
-  color: #333;
-}
-
-article h3 {
-  font-size: 1.5rem;
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
-  color: #444;
-}
-
-/* Paragraphs */
-article p {
-  margin-bottom: 1em;
-  line-height: 1.7;
-}
-
-/* Lists */
-article ul,
-article ol {
-  margin-bottom: 1em;
-  padding-left: 20px; /* Standard list indentation */
-}
-
-article li {
-  margin-bottom: 0.5em;
-}
-
-/* Links */
-article a {
-  color: #007bff;
-  text-decoration: none;
-}
-
-article a:hover {
-  text-decoration: underline;
-}
-
-/* Emphasis */
-article strong {
-  font-weight: bold;
-}
-
-article em {
-  font-style: italic;
-}
-
-/* Tables */
-table {
-  border-collapse: collapse;
-  width: 100%;
-  margin-bottom: 1em;
-  border: 1px solid #ddd; /* Add a light border around the table itself */
-}
-
-th,
-td {
-  border: 1px solid #ddd;
-  padding: 12px; /* Increased padding for better readability */
-  text-align: left;
-}
-
-th {
-  background-color: #f2f2f2;
-  font-weight: bold; /* Ensure table headers are bold */
-}
-
-/* Footer Styling */
-.App footer { /* More specific selector */
-  text-align: center;
-  padding: 1.5rem 0;
-  margin-top: 30px;
-  border-top: 1px solid #ccc;
-  background-color: #333;
-  color: white;
-}
-
-.App footer p {
-  margin: 0;
+  /* Styles for the main App container if needed, but Tailwind's `flex flex-col min-h-screen` handles layout. */
 }
