@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guides & Blog Posts</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #0d0d0d; /* Dark background */
+            color: #00ff00; /* Green text */
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: #1a1a1a; /* Slightly lighter dark for content background */
+            padding: 20px;
+            border: 1px solid #00ff00; /* Green border */
+            box-shadow: 0 0 15px #00ff00;
+        }
+        h1, h2 {
+            color: #00ffff; /* Cyan headings */
+            border-bottom: 1px dashed #00ffff;
+            padding-bottom: 10px;
+            text-align: center;
+            text-shadow: 0 0 5px #00ffff;
+        }
+        h2 {
+            margin-top: 30px;
+            text-align: left;
+            font-size: 1.5em; /* Make section headers a bit larger */
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+            background-color: #222; /* Darker item background */
+            padding: 12px 15px; /* More padding */
+            border-radius: 4px;
+            border-left: 4px solid #00ffff; /* Cyan left border */
+            transition: all 0.3s ease; /* Smooth transition for hover effects */
+        }
+        li:hover {
+            border-left: 4px solid #00ff00; /* Green border on hover */
+            background-color: #2a2a2a; /* Slightly lighter item background on hover */
+            transform: translateX(5px); /* Slight shift on hover */
+        }
+        a {
+            text-decoration: none;
+            color: #00ff00; /* Green links */
+            font-weight: bold;
+            display: block; /* Make the whole li clickable, effectively */
+        }
+        a:hover {
+            color: #00ffff; /* Cyan on hover */
+        }
+        .no-content {
+            color: #ffcc00; /* Yellow for notices */
+            padding: 10px;
+            background-color: #2b2b1a;
+            border: 1px dashed #ffcc00;
+            text-align: center;
+        }
+        /* Adding a bit more flair to the prompt-like title */
+        h1::before {
+            content: "[user@localhost ~]$ ";
+            color: #00ff00; /* Green prompt */
+        }
+        h1 {
+            font-size: 2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>All Intel</h1>
+
+        <h2>./Guides/</h2>
+        <ul id="guides-list">
+            <li><a href="guides/secure-home-wifi.html">Secure Your Home Wi-Fi Network in Under 5 Minutes</a></li>
+            <li><a href="guides/cybercrime-reporting-guide.html">Cybercrime Reporting Guide</a></li>
+        </ul>
+
+        <h2>./Blog/</h2>
+        <ul id="blog-list">
+            <li><a href="blog/jules-android-storage-tips.html">Android Storage Tips</a></li>
+            <!-- Add more blog links here if any -->
+        </ul>
+    </div>
+</body>
+</html>
