@@ -4,6 +4,8 @@ title: How to Check if a Website is Safe Before You Click
 permalink: /guides/how-to-check-if-a-website-is-safe/
 ---
 
+[Go back to home](/index.html)
+
 🚨 How to Check if a Website is Safe Before You Click
 In a world where cyber traps lurk behind innocent-looking links, clicking without thinking is like walking blindfolded into traffic. Whether you're shopping online, clicking a news headline, or exploring a new tool — website safety is non-negotiable. Here's your byte-sized guide to not getting digitally mugged.
 
