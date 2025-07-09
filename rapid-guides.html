@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapid Guides</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            overflow: hidden;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-top: 30px;
+            border-radius: 8px;
+        }
+        header {
+            background: #333;
+            color: #fff;
+            padding: 1rem 0;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        ul li {
+            padding: 10px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        ul li:last-child {
+            border-bottom: none;
+        }
+        ul li a {
+            text-decoration: none;
+            color: #007bff;
+            font-size: 1.1rem;
+        }
+        ul li a:hover {
+            text-decoration: underline;
+        }
+        .home-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .home-link:hover {
+            text-decoration: underline;
+        }
+
+        @media(max-width: 768px){
+            .container {
+                width: 95%;
+            }
+            header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Rapid Guides</h1>
+    </header>
+    <div class="container">
+        <h2>Available Guides</h2>
+        <ul id="guides-list">
+            <li><a href="guides/cybercrime-reporting-guide.html">How to Report Cybercrime: A Step-by-Step Guide</a></li>
+            <!-- More links can be added here in the future -->
+        </ul>
+        <a href="index.html" class="home-link">Back to Home</a>
+    </div>
+</body>
+</html>
