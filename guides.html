@@ -4,6 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guides & Blog Posts</title>
+    <script>
+        // Auth check script
+        const APP_PREFIX = 'jules_auth_demo_'; // Same prefix as in signin.html
+        const currentUser = localStorage.getItem(APP_PREFIX + 'currentUser');
+        const currentUserName = localStorage.getItem(APP_PREFIX + 'currentUserName');
+        const authMethod = localStorage.getItem(APP_PREFIX + 'authMethod');
+
+        if (!currentUser) {
+            // No user logged in, redirect to signin page
+            // Adding original target URL for potential redirect back after login
+            window.location.href = `signin.html?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+        }
+
+        function handleLogout() {
+            localStorage.removeItem(APP_PREFIX + 'currentUser');
+            localStorage.removeItem(APP_PREFIX + 'currentUserName');
+            localStorage.removeItem(APP_PREFIX + 'authMethod');
+            // Also, if it's Google Sign-In, we might want to call google.accounts.id.disableAutoSelect() or google.accounts.id.revoke()
+            // For simplicity, just clearing localStorage and redirecting.
+            // If google object and id are available, and authMethod was google:
+            if (authMethod === 'google' && typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                 // This informs Google that the user has signed out of this app.
+                 // It doesn't sign the user out of Google itself.
+                google.accounts.id.disableAutoSelect();
+            }
+            alert('You have been logged out.');
+            window.location.href = 'signin.html';
+        }
+    </script>
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
@@ -74,22 +103,73 @@
         h1 {
             font-size: 2em;
         }
+        .user-info {
+            text-align: right;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #00ff00;
+        }
+        .user-info span {
+            color: #00ffff;
+            font-weight: bold;
+        }
+        .user-info a {
+            color: #ff6347; /* Tomato red for logout */
+            text-decoration: underline;
+            margin-left: 15px;
+            cursor: pointer;
+            font-weight: normal; /* Override bold from general 'a' style */
+            display: inline; /* Override block from general 'a' style */
+        }
+        .user-info a:hover {
+            color: #ff8a75;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="user-info">
+            Welcome, <span id="username-display">guest</span>!
+            <a onclick="handleLogout()">Logout</a>
+        </div>
+        <script>
+            // Populate username after DOM is loaded for user-info div
+            document.addEventListener('DOMContentLoaded', () => {
+                const displayUser = currentUserName || currentUser; // Use name if available, else email
+                if (displayUser) {
+                    document.getElementById('username-display').textContent = displayUser;
+                }
+            });
+        </script>
+
         <h1>All Intel</h1>
 
         <h2>./Guides/</h2>
         <ul id="guides-list">
-            <li><a href="guides/secure-home-wifi.html">Secure Your Home Wi-Fi Network in Under 5 Minutes</a></li>
-            <li><a href="guides/cybercrime-reporting-guide.html">Cybercrime Reporting Guide</a></li>
+            {% assign guides_pages = site.html_pages | where_exp: "item", "item.path contains 'guides/'" %}
+            {% if guides_pages.size > 0 %}
+                {% for guide in guides_pages %}
+                    {% if guide.url != page.url %}
+                        <li><a href="{{ guide.url | relative_url }}">{{ guide.title | default: guide.name }}</a></li>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <li class="no-content">No guides found in this section.</li>
+            {% endif %}
         </ul>
 
         <h2>./Blog/</h2>
         <ul id="blog-list">
-            <li><a href="blog/jules-android-storage-tips.html">Android Storage Tips</a></li>
-            <!-- Add more blog links here if any -->
+            {% assign blog_pages = site.html_pages | where_exp: "item", "item.path contains 'blog/'" %}
+            {% if blog_pages.size > 0 %}
+                {% for post in blog_pages %}
+                     {% if post.url != page.url %}
+                        <li><a href="{{ post.url | relative_url }}">{{ post.title | default: post.name }}</a></li>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <li class="no-content">No blog posts found in this section.</li>
+            {% endif %}
         </ul>
     </div>
 </body>
