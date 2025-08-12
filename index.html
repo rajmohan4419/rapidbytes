@@ -79,7 +79,7 @@
                     // ---
                     data.forEach(item => {
                         const li = document.createElement('li');
-                        li.textContent = `"${item.quote}" - ${item.author}`;
+                        li.innerHTML = `"${item.quote}" - <strong>${item.author}</strong> <em>(${item.source || 'Unknown Source'})</em>`;
                         ul.appendChild(li);
                     });
 
