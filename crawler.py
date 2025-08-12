@@ -4,123 +4,119 @@ import json
 import time
 from urllib.parse import urljoin, urlparse
 from urllib.robotparser import RobotFileParser
+from collections import deque
+from datetime import datetime, timedelta
 
-def crawl_web(seed_url):
+def scrape_page(url, config):
     """
-    Crawls a website starting from a seed URL.
+    Scrapes a single page, extracts data and new links.
+    Returns a tuple of (list_of_data, list_of_new_urls).
     """
-    # ---
-    # We get the base URL to construct absolute URLs from relative ones.
-    # ---
-    base_url = f"{urlparse(seed_url).scheme}://{urlparse(seed_url).netloc}"
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching {url}: {e}", flush=True)
+        return [], []
 
-    # ---
-    # We set up the robot parser to respect robots.txt.
-    # ---
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    data = []
+    rules = config['scraping_rules']
+    for item in soup.select(rules['quote_container']):
+        text_element = item.select_one(rules['quote_text'])
+        text = text_element.get_text(strip=True) if text_element else "No text found"
+
+        author_element = item.select_one(rules['author_text'])
+        author = author_element.get_text(strip=True) if author_element else "No author found"
+
+        data.append({'quote': text, 'author': author, 'source': config['name']})
+
+    new_urls = []
+    base_url = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
+    for link in soup.find_all('a', href=True):
+        href = link['href']
+        absolute_url = urljoin(base_url, href)
+        if absolute_url.startswith(base_url):
+            new_urls.append(absolute_url)
+
+    return data, new_urls
+
+def crawl_site(config):
+    """
+    Crawls a website based on a configuration dictionary.
+    Manages the queue of URLs to visit for a single site.
+    """
     robot_parser = RobotFileParser()
+    if not config.get('seed_urls'):
+        print(f"No seed URLs for {config.get('name')}", flush=True)
+        return []
+    base_url = f"{urlparse(config['seed_urls'][0]).scheme}://{urlparse(config['seed_urls'][0]).netloc}"
     robot_parser.set_url(urljoin(base_url, 'robots.txt'))
     robot_parser.read()
 
-    # ---
-    # We use a set to store the URLs we've already visited.
-    # ---
-    visited = set()
-    # ---
-    # We use a list as a queue to store the URLs we need to crawl.
-    # We start with the seed URL.
-    # ---
-    queue = [seed_url]
-    # ---
-    # This list will store the data we extract.
-    # ---
-    data = []
+    queue = deque(config['seed_urls'])
+    visited = set(config['seed_urls'])
+    all_site_data = []
 
-    # ---
-    # We continue crawling as long as there are URLs in the queue.
-    # ---
     while queue:
-        # ---
-        # We get the next URL from the queue.
-        # ---
-        current_url = queue.pop(0)
+        current_url = queue.popleft()
 
-        # ---
-        # We check if we've already visited this URL.
-        # ---
-        if current_url in visited:
-            continue
-
-        # ---
-        # We check if we are allowed to crawl this URL according to robots.txt.
-        # ---
         if not robot_parser.can_fetch('*', current_url):
-            print(f"Skipping (disallowed by robots.txt): {current_url}")
+            print(f"Skipping (disallowed by robots.txt): {current_url}", flush=True)
             continue
 
-        # ---
-        # We add the current URL to the set of visited URLs.
-        # ---
-        visited.add(current_url)
-        print(f"Crawling: {current_url}")
+        print(f"Crawling: {current_url}", flush=True)
 
-        try:
-            # ---
-            # We fetch the HTML content of the page.
-            # ---
-            response = requests.get(current_url, timeout=5)
-            # ---
-            # We check if the request was successful.
-            # ---
-            response.raise_for_status()
+        data, new_urls = scrape_page(current_url, config)
+        all_site_data.extend(data)
 
-            # ---
-            # We parse the HTML content using BeautifulSoup.
-            # ---
-            soup = BeautifulSoup(response.text, 'html.parser')
+        for url in new_urls:
+            if url not in visited:
+                visited.add(url)
+                queue.append(url)
 
-            # ---
-            # We extract the title of the page from the <title> tag.
-            # For quotes.toscrape.com, the interesting data are the quotes themselves.
-            # Let's extract the quotes and authors instead of just the title.
-            # ---
-            for quote in soup.find_all('div', class_='quote'):
-                text = quote.find('span', class_='text').text
-                author = quote.find('small', class_='author').text
-                data.append({'quote': text, 'author': author})
+        time.sleep(config.get('crawl_delay', 1))
 
-            # ---
-            # We find all the links on the page.
-            # ---
-            for link in soup.find_all('a', href=True):
-                href = link['href']
-                # ---
-                # We construct the absolute URL for the link.
-                # ---
-                absolute_url = urljoin(base_url, href)
-                # ---
-                # We add the new URL to our queue to be crawled if it's within the same domain.
-                # ---
-                if absolute_url.startswith(base_url) and absolute_url not in visited:
-                    queue.append(absolute_url)
+    return all_site_data
 
-            # ---
-            # Politeness delay.
-            # ---
-            time.sleep(1)
-
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching {current_url}: {e}")
-
-    # ---
-    # After crawling, we save the extracted data to a JSON file.
-    # ---
-    with open('data.json', 'w') as f:
-        json.dump(data, f, indent=4)
 
 if __name__ == "__main__":
-    # ---
-    # We start crawling from quotes.toscrape.com
-    # ---
-    seed_url = "http://quotes.toscrape.com/"
-    crawl_web(seed_url)
-    print("Crawling complete. Data saved to data.json")
+    with open('config.json', 'r') as f:
+        configs = json.load(f)
+
+    for config in configs:
+        config['last_crawled'] = datetime.min
+
+    while True:
+        print(f"\n--- Scheduler checking at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---", flush=True)
+
+        task_queue = deque()
+
+        for config in configs:
+            schedule_minutes = config.get('schedule_minutes', 60)
+            if datetime.now() - config['last_crawled'] > timedelta(minutes=schedule_minutes):
+                print(f"Scheduling '{config['name']}' for crawling.", flush=True)
+                task_queue.append(config)
+                config['last_crawled'] = datetime.now()
+
+        if not task_queue:
+            print("No sites are due for crawling.", flush=True)
+
+        all_data = []
+        while task_queue:
+            config = task_queue.popleft()
+
+            print(f"--- Starting crawl for {config['name']} ---", flush=True)
+            site_data = crawl_site(config)
+            if site_data:
+                all_data.extend(site_data)
+            print(f"--- Finished crawl for {config['name']} ---", flush=True)
+
+        if all_data:
+            with open('data.json', 'w') as f:
+                json.dump(all_data, f, indent=4)
+            print("Crawling complete. Data saved to data.json", flush=True)
+
+        print("\n--- Scheduler sleeping for 60 seconds ---", flush=True)
+        time.sleep(60)
