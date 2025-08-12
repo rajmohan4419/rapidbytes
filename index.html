@@ -3,30 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coming Soon</title>
+    <title>Crawled News</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
+            padding: 20px;
             background-color: #f0f0f0;
         }
         .container {
-            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         h1 {
-            font-size: 3em;
             color: #333;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        li:last-child {
+            border-bottom: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Coming Soon</h1>
-        <p>Our website is under construction. We'll be here soon with our new awesome site.</p>
+        <h1>Crawled News Titles</h1>
+        <div id="data-container">
+            <p>Loading...</p>
+        </div>
     </div>
+
+    <script>
+        // ---
+        // This script runs after the HTML document has been fully loaded.
+        // ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // ---
+            // We fetch the data.json file.
+            // ---
+            fetch('data.json')
+                // ---
+                // We parse the response as JSON.
+                // ---
+                .then(response => response.json())
+                // ---
+                // We process the JSON data.
+                // ---
+                .then(data => {
+                    // ---
+                    // We get the container element where we'll display the data.
+                    // ---
+                    const dataContainer = document.getElementById('data-container');
+                    // ---
+                    // We clear the "Loading..." message.
+                    // ---
+                    dataContainer.innerHTML = '';
+
+                    // ---
+                    // We create an unordered list to hold the titles.
+                    // ---
+                    const ul = document.createElement('ul');
+
+                    // ---
+                    // We loop through the data and create a list item for each title.
+                    // ---
+                    data.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = `"${item.quote}" - ${item.author}`;
+                        ul.appendChild(li);
+                    });
+
+                    // ---
+                    // We append the list to the container.
+                    // ---
+                    dataContainer.appendChild(ul);
+                })
+                // ---
+                // We handle any errors that might occur during the fetch.
+                // ---
+                .catch(error => {
+                    const dataContainer = document.getElementById('data-container');
+                    dataContainer.innerHTML = '<p>Error loading data.</p>';
+                    console.error('Error fetching data:', error);
+                });
+        });
+    </script>
 </body>
 </html>
