@@ -1,7 +1,7 @@
 [
   {
     "name": "Quotes to Scrape",
-    "seed_urls": ["http://quotes.toscrape.com/"],
+    "seed_urls": ["https://timesofindia.indiatimes.com"],
     "sitemap_url": null,
     "crawl_delay": 1,
     "schedule_minutes": 60,
